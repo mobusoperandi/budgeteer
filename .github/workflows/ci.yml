@@ -1,0 +1,35 @@
+on:
+  push: {}
+  pull_request: {}
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # for commit linting and semantic-release
+          persist-credentials: false # for later steps to use a different authentication
+      - run: rustup update
+      - uses: actions/cache@v3
+        with:
+          path: |
+            .bin/
+            target/
+            ~/.cargo/
+          # cargo-run-bin refers to the following step
+          key: ${{ runner.os }}_cargo-run-bin_${{ hashFiles('Cargo.toml', 'Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}_cargo-run-bin_
+            ${{ runner.os }}_
+      - run: cargo install cargo-run-bin
+      - uses: navikt/github-app-token-generator@v1
+        if: github.ref == 'refs/heads/master'
+        id: get-token
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+      - run: cargo bin makers ci
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

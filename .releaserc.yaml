@@ -1,0 +1,48 @@
+branches:
+  - master
+plugins:
+  - - "@semantic-release/commit-analyzer"
+    - releaseRules:
+        - breaking: true
+          release: major
+        - revert: true
+          release: patch
+        - type: feat
+          release: minor
+        - type: fix
+          release: patch
+        - type: perf
+          release: patch
+        - type: docs
+          release: patch 
+  - - "@semantic-release/release-notes-generator"
+    - preset: conventionalcommits
+      presetConfig:
+        types:
+          - type: build
+            section: Build system / dependencies
+          - type: ci
+            section: CI
+          - type: docs
+            section: Documentation
+          - type: feat
+            section: Features
+          - type: fix
+            section: Bug fixes
+          - type: perf
+            section: Performance
+          - type: refactor
+            section: Refactoring
+          - type: test
+            section: Testing
+  - "@semantic-release/changelog"
+  - "@semantic-release/github"
+  - - "@semantic-release/exec"
+    - verifyConditionsCmd: cargo bin semantic-release-rust verify-conditions
+      prepareCmd: cargo bin cargo-set-version --workspace ${nextRelease.version} && cargo update --package budgeteer
+      publishCmd: cargo publish --dry-run
+  - - "@semantic-release/git"
+    - assets:
+        - CHANGELOG.md
+        - Cargo.lock
+        - Cargo.toml

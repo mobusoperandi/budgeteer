@@ -2,5 +2,22 @@
 name = "budgeteer"
 version = "0.1.0"
 edition = "2021"
+description = "Envelope system budgeting CLI app"
+readme = "README.md"
+repository = "https://github.com/mobusoperandi/budgeteer"
+license = "MIT"
+keywords = ["budgeting", "cli"]
+categories = ["command-line-utilities"]
+include = [
+    "README.md",
+    "src/**/*",
+    "tests/**/*"
+]
 
 [dependencies]
+
+[dev-dependencies]
+cargo-make = "0.35.13"
+conventional_commits_linter = "0.12.1"
+markdown-toc = "0.2.0"
+sd = "0.7.6"
