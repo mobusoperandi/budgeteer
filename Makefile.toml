@@ -11,7 +11,7 @@ env = { RUSTFLAGS = "--deny warnings" }
 run_task = { name = ["test", "clippy", "doc", "check_fmt", "lint_pr_commit_msgs"], parallel = true }
 
 [tasks.ci_post]
-run_task = { name = ["no_untracked", "no_modified", "publish"] }
+run_task = { name = ["no_untracked", "no_modified", "release"] }
 
 [tasks.ci]
 run_task = { name = ["ci_main", "ci_post"] }
@@ -84,7 +84,7 @@ if [[ `git ls-files --exclude-standard --others` ]]; then
 fi
 '''
 
-[tasks.publish]
+[tasks.release]
 condition = { env = { "GITHUB_REF_TYPE" = "branch", "GITHUB_REF_NAME" = "master" } }
 script = '''
 #!/usr/bin/env bash
