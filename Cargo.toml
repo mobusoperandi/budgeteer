@@ -17,6 +17,7 @@ include = [
 [dependencies]
 
 [dev-dependencies]
+cargo-edit = "0.9.1"
 cargo-make = "0.35.13"
 conventional_commits_linter = "0.12.1"
 markdown-toc = "0.2.0"
