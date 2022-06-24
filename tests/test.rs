@@ -24,11 +24,11 @@ fn if_persistance_file_doesnt_exist_it_is_created() {
 
 #[test]
 fn if_persistance_file_exists_it_is_unaltered() {
-    let persistance_file_path = tempfile().unwrap();
+    let persistance_file = tempfile().unwrap();
     let status = Command::new(BIN_PATH)
-        .env("PERSISTANCE_FILE", persistance_file_path.clone())
+        .env("PERSISTANCE_FILE", persistance_file.)
         .status()
         .unwrap();
     assert!(status.success());
-    assert!(persistance_file_path.exists());
+    assert!(persistance_file.exists());
 }
