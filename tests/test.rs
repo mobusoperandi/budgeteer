@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{env::temp_dir, process::Command};
 
 const BIN_PATH: &str = env!(concat!("CARGO_BIN_EXE_", env!("CARGO_PKG_NAME")));
 
@@ -10,7 +10,13 @@ fn an_executable_named_after_the_package_exits_with_zero() {
 
 #[test]
 fn if_persistance_file_doesnt_exist_it_is_created() {
-    Command::new(BIN_PATH).env("PERSISTANCE_FILE", "/")
+    let dir = temp_dir();
+    let persistance_file_path = dir.join("pf");
+    let status = Command::new(BIN_PATH)
+        .env("PERSISTANCE_FILE", persistance_file_path)
+        .status()
+        .unwrap();
+    assert!
 }
 
 #[test]

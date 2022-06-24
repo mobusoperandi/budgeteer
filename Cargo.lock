@@ -138,6 +138,7 @@ dependencies = [
  "markdown-toc",
  "sd",
  "semantic-release-rust",
+ "tempfile",
 ]
 
 [[package]]
