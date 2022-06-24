@@ -10,10 +10,8 @@ fn an_executable_named_after_the_package_exits_with_zero() {
 
 #[test]
 fn if_persistance_file_doesnt_exist_it_is_created() {
-
+    process::Command::new(program)
 }
 
 #[test]
-fn if_persistance_file_exists_it_is_unaltered() {
-
-}
+fn if_persistance_file_exists_it_is_unaltered() {}
