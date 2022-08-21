@@ -1,3 +1,9 @@
+// get the env var
+
+use std::{env, fs};
+
 fn main() {
-    println!("Hello, world!");
+    let persistance_file_path = env::var("PERSISTANCE_FILE").unwrap();
+
+    fs::File::create(persistance_file_path).unwrap();
 }
