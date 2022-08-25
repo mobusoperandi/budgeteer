@@ -1,5 +1,3 @@
-// get the env var
-
 use std::{env, fs};
 
 fn main() {
