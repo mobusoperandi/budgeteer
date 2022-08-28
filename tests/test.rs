@@ -39,6 +39,7 @@ fn if_persistance_file_env_not_defined_exit_with_non_zero() {
 }
 
 #[test]
+#[should_panic]
 fn readme() {
     trycmd::TestCases::new().case("README.md").env(
         PERSISTANCE_FILE,
