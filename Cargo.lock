@@ -130,7 +130,7 @@ dependencies = [
 
 [[package]]
 name = "budgeteer"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "cargo-edit",
  "cargo-make",
