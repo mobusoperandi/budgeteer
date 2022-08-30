@@ -1,6 +1,6 @@
 [env]
 CARGO_TERM_COLOR = "always"
-LINT_COMMIT_MSG_FROM_STDIN = "cargo bin conventional_commits_linter --allow-angular-type-only --from-stdin"
+LINT_COMMIT_MSG_FROM_STDIN = "cargo bin conventional_commits_linter --from-stdin"
 
 [tasks.pre-commit]
 env = { RUSTFLAGS = "--deny warnings" }
