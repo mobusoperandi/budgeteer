@@ -19,14 +19,14 @@ It is intended that any release will be able to read persistance data from any e
 Create an _initial balance_ account where all initial balances originate.
 
 ```console
-$ budgeteer account create external "initial balance"
+$ budgeteer account create --kind external --name "initial balance"
 ```
 
 Create some budget accounts.
 
 ```console
-$ budgeteer account create budget wallet
-$ budgeteer account create budget bank
+$ budgeteer account create --kind budget --name wallet
+$ budgeteer account create --kind budget --name bank
 ```
 
 Record a transaction that will explain your current balances.
@@ -39,14 +39,18 @@ Recorded transaction #1
 Create a currency unit.
 
 ```console
-$ budgeteer unit create USD 2
+$ budgeteer unit create --decimal-places 2 --name USD
 ```
 
 Add moves to that transaction.
 
 ```console
-$ budgeteer move add 1 "initial balance" wallet 147.13 USD
-$ budgeteer move add 1 "initial balance" bank 5650.3 USD
+$ budgeteer move add --transaction 1
+> --debit-account "initial balance" --credit-account wallet
+> --amount 147.13 --unit USD
+$ budgeteer move add --transaction 1
+> --debit-account "initial balance" --credit-account bank
+> --amount 5650.3 --unit USD
 ```
 
 Show current balances.
@@ -62,10 +66,12 @@ wallet             147.13 USD
 Pay rent.
 
 ```console
-$ budgeteer account create external rent
+$ budgeteer account create --kind external --name rent
 $ budgeteer transaction record --date 2022-08-28
 Recorded transaction #2
-$ budgeteer move add 2 bank rent 1200 USD
+$ budgeteer move add --transaction 2
+> --debit-account bank --credit-account rent
+> --amount 1200 --unit USD
 ```
 
 Show the running balance of the bank account.
