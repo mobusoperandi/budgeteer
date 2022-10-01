@@ -1,3 +1,25 @@
+## [1.1.0](https://github.com/mobusoperandi/budgeteer/compare/v1.0.1...v1.1.0) (2022-10-01)
+
+
+### Features
+
+* implement tutorial stub, roughly ([3218e58](https://github.com/mobusoperandi/budgeteer/commit/3218e58105b8a0a3de9d1b08b9fd32c0945e7bb0))
+
+
+### Refactoring
+
+* persistance typo fixed ([f91f2e5](https://github.com/mobusoperandi/budgeteer/commit/f91f2e5c007994128a021d812f02c4dc3bd8812e))
+
+
+### Testing
+
+* supress stderr for some test output ([d03010d](https://github.com/mobusoperandi/budgeteer/commit/d03010db81251910d45b29fe4aeb280a2d4b2602))
+
+
+### Documentation
+
+* use more cli flags ([9fd965c](https://github.com/mobusoperandi/budgeteer/commit/9fd965ca97eaaa57bd48e3838a0bc6f9f36b5e4d))
+
 ## [1.0.1](https://github.com/mobusoperandi/budgeteer/compare/v1.0.0...v1.0.1) (2022-08-28)
 
 
