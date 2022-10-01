@@ -15,7 +15,16 @@ include = [
 ]
 
 [dependencies]
-chrono = "0.4.22"
+ansitok = "0.1.0"
+anyhow = "1.0.65"
+chrono = { version = "0.4.22", features = ["serde"] }
+clap = { version = "3.2.18", features = ["derive"] }
+cli-table = "0.4.7"
+itertools = "0.10.3"
+readext = "0.1.0"
+ron = "0.8.0"
+rust_decimal = "1.26.1"
+serde = { version = "1.0.144", features = ["derive"] }
 
 [dev-dependencies]
 cargo-edit = "0.9.1"

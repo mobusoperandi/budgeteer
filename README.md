@@ -34,6 +34,7 @@ Record a transaction that will explain your current balances.
 ```console
 $ budgeteer transaction record --date 2022-08-27
 Recorded transaction #1
+
 ```
 
 Create a currency unit.
@@ -50,17 +51,18 @@ $ budgeteer move add --transaction 1
 > --amount 147.13 --unit USD
 $ budgeteer move add --transaction 1
 > --debit-account "initial balance" --credit-account bank
-> --amount 5650.3 --unit USD
+> --amount 5650.30 --unit USD
 ```
 
 Show current balances.
 
 ```console
 $ budgeteer balances
-account         balance
-bank             5,650.30 USD
-initial balance -5,797.43 USD
-wallet             147.13 USD
+ account          balance       
+ bank              5650.30  USD 
+ initial balance  -5797.43  USD 
+ wallet             147.13  USD 
+
 ```
 
 Pay rent.
@@ -69,28 +71,30 @@ Pay rent.
 $ budgeteer account create --kind external --name rent
 $ budgeteer transaction record --date 2022-08-28
 Recorded transaction #2
+
 $ budgeteer move add --transaction 2
 > --debit-account bank --credit-account rent
-> --amount 1200 --unit USD
+> --amount 1200.00 --unit USD
 ```
 
 Show the running balance of the bank account.
 
 ```console
-$ budgeteer running-balance bank
-transaction   affect        balance
-#1 2022-08-27 +5,650.30 USD 5,650.30 USD
-#2 2022-08-28 -1,200.00 USD 4,450.30 USD
+$ budgeteer running-balance --account bank --unit USD
+ transaction    affect    balance 
+ #1 2022-08-27  +5650.30  5650.30 
+ #2 2022-08-28  -1200.00  4450.30 
+
 ```
 
 Show a particular transaction.
 
 ```console
-$ budgeteer transaction show 2
+$ budgeteer transaction show --id 2
 2022-08-28
+ from  to    amount      
+ bank  rent  1200.00 USD 
 
-move from to   USD
-#1   bank rent 1,200.00
 ```
 
 [semver]: https://semver.org/spec/v2.0.0.html
