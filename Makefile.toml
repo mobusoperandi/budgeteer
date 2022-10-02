@@ -16,6 +16,10 @@ run_task = { name = ["no_untracked", "no_modified", "release"] }
 [tasks.ci]
 run_task = { name = ["ci_main", "ci_post"] }
 
+[tasks.cov]
+command = "cargo"
+args = ["bin", "cargo-llvm-cov", "--all-features", "--workspace", "--show-missing-lines", "--html"]
+
 [tasks.test]
 command = "cargo"
 args = ["test"]
