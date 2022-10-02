@@ -28,10 +28,10 @@ pub(crate) enum Account {
 
 #[derive(clap::Args)]
 pub(crate) struct AccountCreate {
-    #[clap(long, arg_enum, value_parser)]
+    #[clap(long, arg_enum)]
     pub(crate) kind: account::Kind,
 
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub(crate) name: account::Name,
 }
 
@@ -43,13 +43,13 @@ pub(crate) enum Transaction {
 
 #[derive(clap::Args)]
 pub(crate) struct TransactionRecord {
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub(crate) date: NaiveDate,
 }
 
 #[derive(clap::Args)]
 pub(crate) struct TransactionShow {
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub(crate) id: transaction::Id,
 }
 
@@ -60,9 +60,9 @@ pub(crate) enum Unit {
 
 #[derive(clap::Args)]
 pub(crate) struct UnitCreate {
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub(crate) decimal_places: u8,
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub(crate) name: unit::Name,
 }
 
@@ -73,23 +73,23 @@ pub(crate) enum Move {
 
 #[derive(clap::Args)]
 pub(crate) struct RunningBalance {
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub(crate) account: account::Name,
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub(crate) unit: unit::Name,
 }
 
 #[derive(clap::Args)]
 pub(crate) struct MoveAdd {
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub(crate) transaction: transaction::Id,
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub(crate) debit_account: account::Name,
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub(crate) credit_account: account::Name,
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub(crate) amount: amount::Amount,
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub(crate) unit: unit::Name,
 }
 
