@@ -3,7 +3,10 @@ use std::collections::BTreeMap;
 use crate::{
     entities::{
         account::{self, Account},
-        balance, move_, transaction, unit,
+        balance::Balance,
+        move_::Move,
+        transaction::{self, Transaction},
+        unit::{self, Unit},
     },
     events::{self, Event, Events},
 };
@@ -24,7 +27,7 @@ impl Events {
                 |mut accounts, events::AccountCreated { name, kind }| {
                     accounts.insert(
                         name.clone(),
-                        account::Account {
+                        Account {
                             _kind: kind,
                             _name: name,
                         },
@@ -36,7 +39,7 @@ impl Events {
     pub(crate) fn all_unit_names(&self) -> Vec<unit::Name> {
         self.all_units().keys().cloned().collect()
     }
-    pub(crate) fn all_units(&self) -> BTreeMap<unit::Name, unit::Unit> {
+    pub(crate) fn all_units(&self) -> BTreeMap<unit::Name, Unit> {
         self.iter()
             .filter_map(|event| match event {
                 Event::UnitCreated(unit_created) => Some(unit_created),
@@ -52,7 +55,7 @@ impl Events {
                  }| {
                     units.insert(
                         name.clone(),
-                        unit::Unit {
+                        Unit {
                             _name: name,
                             decimal_places,
                         },
@@ -71,10 +74,10 @@ impl Events {
             .map(|id| transaction::Id(id as u64))
             .collect()
     }
-    pub(crate) fn get_unit(&self, unit_name: &unit::Name) -> Option<unit::Unit> {
+    pub(crate) fn get_unit(&self, unit_name: &unit::Name) -> Option<Unit> {
         self.all_units().get(unit_name).cloned()
     }
-    pub(crate) fn all_moves(&'_ self) -> impl Iterator<Item = move_::Move> + '_ {
+    pub(crate) fn all_moves(&'_ self) -> impl Iterator<Item = Move> + '_ {
         self.iter().filter_map(|event| match event {
             Event::MoveAdded(events::MoveAdded {
                 debit_account,
@@ -82,7 +85,7 @@ impl Events {
                 amount,
                 unit,
                 transaction,
-            }) => Some(move_::Move {
+            }) => Some(Move {
                 transaction: *transaction,
                 debit_account: debit_account.clone(),
                 credit_account: credit_account.clone(),
@@ -92,10 +95,7 @@ impl Events {
             _ => None,
         })
     }
-    pub(crate) fn get_transaction(
-        &self,
-        transaction_id: &transaction::Id,
-    ) -> Option<transaction::Transaction> {
+    pub(crate) fn get_transaction(&self, transaction_id: &transaction::Id) -> Option<Transaction> {
         self.iter()
             .filter_map(|event| {
                 if let Event::TransactionRecorded(transaction_recorded) = event {
@@ -108,7 +108,7 @@ impl Events {
             .find_map(|(index, transaction_created)| {
                 let current_id = transaction::Id(index as u64 + 1);
                 if &current_id == transaction_id {
-                    Some(transaction::Transaction {
+                    Some(Transaction {
                         id: current_id,
                         date: transaction_created.date,
                     })
@@ -117,7 +117,7 @@ impl Events {
                 }
             })
     }
-    pub(crate) fn all_balances(&self) -> BTreeMap<account::Name, balance::Balance> {
+    pub(crate) fn all_balances(&self) -> BTreeMap<account::Name, Balance> {
         self.all_moves()
             .fold(BTreeMap::new(), |mut balances, move_| {
                 let balance = balances.entry(move_.debit_account).or_default();

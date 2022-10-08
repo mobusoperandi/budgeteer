@@ -1,7 +1,4 @@
-use std::{
-    path::PathBuf,
-    process::{Command, Stdio},
-};
+use std::{path::PathBuf, process};
 
 use tempfile::{tempdir, TempDir};
 
@@ -16,8 +13,8 @@ fn path_to_non_existant_file() -> (PathBuf, TempDir) {
 
 #[test]
 fn if_persistence_file_env_not_defined_exit_with_non_zero() {
-    let status = Command::new(BIN_PATH)
-        .stderr(Stdio::null())
+    let status = process::Command::new(BIN_PATH)
+        .stderr(process::Stdio::null())
         .status()
         .unwrap();
     assert_ne!(status.code().unwrap(), 0);

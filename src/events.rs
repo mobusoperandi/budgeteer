@@ -1,4 +1,4 @@
-use crate::entities::{account, amount, transaction, unit};
+use crate::entities::{account, amount::Amount, transaction, unit};
 use chrono::NaiveDate;
 use itertools::Itertools;
 use readext::ReadExt;
@@ -35,7 +35,7 @@ pub(crate) struct MoveAdded {
     pub(crate) transaction: transaction::Id,
     pub(crate) debit_account: account::Name,
     pub(crate) credit_account: account::Name,
-    pub(crate) amount: amount::Amount,
+    pub(crate) amount: Amount,
     pub(crate) unit: unit::Name,
 }
 

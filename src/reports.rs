@@ -1,10 +1,10 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, ops};
 
 use crate::{
     entities::{account, transaction, unit},
     events::Events,
 };
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use chrono::NaiveDate;
 use cli_table::{Cell, Row, Table};
 use itertools::Itertools;
@@ -23,7 +23,7 @@ pub(crate) enum Report {
 }
 
 impl Report {
-    pub(crate) fn compile(&self, events: &Events) -> anyhow::Result<String> {
+    pub(crate) fn compile(&self, events: &Events) -> Result<String> {
         let output = match self {
             Report::TransactionRecordResponse => {
                 let last_transaction_id = events.last_transaction_id();
@@ -68,9 +68,9 @@ impl Report {
                                 .entry(transaction.id)
                                 .or_insert((transaction.date, Default::default(), running_balance));
                             let operation = if account == &move_.debit_account {
-                                std::ops::SubAssign::sub_assign
+                                ops::SubAssign::sub_assign
                             } else if account == &move_.credit_account {
-                                std::ops::AddAssign::add_assign
+                                ops::AddAssign::add_assign
                             } else {
                                 unreachable!()
                             };

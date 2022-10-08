@@ -23,7 +23,7 @@ use std::{
     path::PathBuf,
 };
 
-use events::Events;
+use events::{Event, Events};
 
 fn main() {
     let args_os = std::env::args_os();
@@ -41,8 +41,7 @@ fn main() {
         .or_else(|_| -> Result<_> {
             let mut new_persistence_file =
                 file_options.create(true).open(&persistence_file_path)?;
-            new_persistence_file
-                .write_all(ron::to_string(&Vec::<events::Event>::new())?.as_bytes())?;
+            new_persistence_file.write_all(ron::to_string(&Vec::<Event>::new())?.as_bytes())?;
             new_persistence_file.rewind()?;
             Ok(new_persistence_file)
         })

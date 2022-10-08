@@ -1,4 +1,4 @@
-use crate::entities::{account, amount, transaction, unit};
+use crate::entities::{account, amount::Amount, transaction, unit};
 use chrono::NaiveDate;
 
 #[derive(clap::Parser)]
@@ -88,7 +88,7 @@ pub(crate) struct MoveAdd {
     #[clap(long)]
     pub(crate) credit_account: account::Name,
     #[clap(long)]
-    pub(crate) amount: amount::Amount,
+    pub(crate) amount: Amount,
     #[clap(long)]
     pub(crate) unit: unit::Name,
 }
