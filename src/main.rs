@@ -30,7 +30,8 @@ fn main() {
     // TODO see whether all the validation can be done here
     let arguments = cli::Arguments::try_parse_from(args_os).unwrap();
     // TODO introduce struct for return type
-    let (event, report) = arguments_interpreter::interpret(arguments).unwrap();
+    let arguments_interpreter::Actions { event, report } =
+        arguments_interpreter::interpret(arguments).unwrap();
     // TODO default persistence file path
     let persistence_file_path = PathBuf::from(env::var("PERSISTENCE_FILE").unwrap());
     let mut file_options = fs::OpenOptions::new();
