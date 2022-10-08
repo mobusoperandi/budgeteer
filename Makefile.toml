@@ -18,7 +18,7 @@ run_task = { name = ["ci_main", "ci_post"] }
 
 [tasks.cov]
 command = "cargo"
-args = ["bin", "cargo-llvm-cov", "--all-features", "--workspace", "--show-missing-lines", "--html"]
+args = ["bin", "cargo-llvm-cov", "--all-features", "--workspace", "--show-missing-lines", "--html", "test", "--bins"]
 
 [tasks.test]
 command = "cargo"
