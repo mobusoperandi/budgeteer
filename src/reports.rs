@@ -1,14 +1,13 @@
 use std::{collections::BTreeMap, ops};
 
 use crate::{
-    entities::{account, transaction, unit},
+    entities::{account, amount::Amount, transaction, unit},
     events::Events,
 };
 use anyhow::{anyhow, Result};
 use chrono::NaiveDate;
 use cli_table::{Cell, Row, Table};
 use itertools::Itertools;
-use rust_decimal::Decimal;
 
 pub(crate) enum Report {
     TransactionRecordResponse,
@@ -60,8 +59,8 @@ impl Report {
                     .sorted_by_key(|(transaction, _move)| transaction.id)
                     .fold(
                         (
-                            BTreeMap::<transaction::Id, (NaiveDate, Decimal, Decimal)>::new(),
-                            Decimal::ZERO,
+                            BTreeMap::<transaction::Id, (NaiveDate, Amount, Amount)>::new(),
+                            Amount::default(),
                         ),
                         |(mut rows, running_balance), (transaction, move_)| {
                             let (_transaction_date, row_affect, row_balance) = rows
@@ -74,8 +73,8 @@ impl Report {
                             } else {
                                 unreachable!()
                             };
-                            operation(row_affect, move_.amount.0);
-                            operation(row_balance, move_.amount.0);
+                            operation(row_affect, move_.amount);
+                            operation(row_balance, move_.amount);
                             let running_balance = *row_balance;
                             (rows, running_balance)
                         },

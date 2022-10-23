@@ -1,4 +1,4 @@
-use std::{ops, str::FromStr};
+use std::{fmt::Display, ops, str::FromStr};
 
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -15,6 +15,12 @@ impl ops::SubAssign<Self> for Amount {
 impl ops::AddAssign<Self> for Amount {
     fn add_assign(&mut self, rhs: Self) {
         self.0 += rhs.0;
+    }
+}
+
+impl Display for Amount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        <Decimal as Display>::fmt(&self.0, f)
     }
 }
 
