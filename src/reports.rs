@@ -73,8 +73,8 @@ impl Report {
                             } else {
                                 unreachable!()
                             };
-                            operation(row_affect, move_.amount);
-                            operation(row_balance, move_.amount);
+                            operation(row_affect, move_.amount.into());
+                            operation(row_balance, move_.amount.into());
                             let running_balance = *row_balance;
                             (rows, running_balance)
                         },
@@ -97,7 +97,7 @@ impl Report {
                             Some([
                                 move_.debit_account.cell(),
                                 move_.credit_account.cell(),
-                                format!("{} {}", move_.amount.0, move_.unit).cell(),
+                                format!("{} {}", move_.amount, move_.unit).cell(),
                             ])
                         } else {
                             None

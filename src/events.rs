@@ -1,4 +1,4 @@
-use crate::entities::{account, amount::Amount, transaction, unit};
+use crate::entities::{account, amount::NonNegativeAmount, transaction, unit};
 use chrono::NaiveDate;
 use itertools::Itertools;
 use readext::ReadExt;
@@ -35,7 +35,7 @@ pub(crate) struct MoveAdded {
     pub(crate) transaction: transaction::Id,
     pub(crate) debit_account: account::Name,
     pub(crate) credit_account: account::Name,
-    pub(crate) amount: Amount,
+    pub(crate) amount: NonNegativeAmount,
     pub(crate) unit: unit::Name,
 }
 
@@ -134,10 +134,10 @@ impl Event {
                 let unit = events
                     .get_unit(unit)
                     .ok_or(format!("Unit not found {unit}"))?;
-                if amount.0.scale() != unit.decimal_places as u32 {
+                if amount.scale() != unit.decimal_places as u32 {
                     return Err(format!(
                         "Amount decimal places {} is different than the unit decimal places {}",
-                        amount.0.scale(),
+                        amount.scale(),
                         unit.decimal_places
                     ));
                 }

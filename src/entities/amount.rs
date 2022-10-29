@@ -1,5 +1,6 @@
 use std::{fmt::Display, ops, str::FromStr};
 
+use anyhow::{anyhow, Result};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
@@ -29,5 +30,39 @@ impl FromStr for Amount {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self(Decimal::from_str_exact(s)?))
+    }
+}
+
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq, Default)]
+pub(crate) struct NonNegativeAmount(Decimal);
+
+impl NonNegativeAmount {
+    pub(crate) fn scale(&self) -> u32 {
+        self.0.scale()
+    }
+}
+
+impl FromStr for NonNegativeAmount {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let decimal = Decimal::from_str_exact(s)?;
+        if decimal.is_sign_negative() {
+            Err(anyhow!("Expected non-negative amount"))
+        } else {
+            Ok(Self(decimal))
+        }
+    }
+}
+
+impl From<NonNegativeAmount> for Amount {
+    fn from(non_negative_amount: NonNegativeAmount) -> Self {
+        Amount(non_negative_amount.0)
+    }
+}
+
+impl Display for NonNegativeAmount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        <Decimal as Display>::fmt(&self.0, f)
     }
 }

@@ -53,9 +53,6 @@ pub(crate) fn interpret(args: cli::Arguments) -> Result<Actions> {
             if debit_account == credit_account {
                 bail!("Debit account equals credit account");
             }
-            if amount.0.is_sign_negative() {
-                bail!("Negative move amount");
-            }
             Ok(Actions {
                 event: Some(Event::MoveAdded(events::MoveAdded {
                     transaction,

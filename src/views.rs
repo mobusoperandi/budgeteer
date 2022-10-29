@@ -122,11 +122,11 @@ impl Events {
             .fold(BTreeMap::new(), |mut balances, move_| {
                 let balance = balances.entry(move_.debit_account).or_default();
                 let unit_amount = balance.0.entry(move_.unit.clone()).or_default();
-                *unit_amount -= move_.amount;
+                *unit_amount -= move_.amount.into();
 
                 let balance = balances.entry(move_.credit_account).or_default();
                 let unit_amount = balance.0.entry(move_.unit).or_default();
-                *unit_amount += move_.amount;
+                *unit_amount += move_.amount.into();
 
                 balances
             })
