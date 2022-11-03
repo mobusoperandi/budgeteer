@@ -11,12 +11,14 @@ pub(crate) struct Account {
 }
 
 #[derive(Clone, Copy, ValueEnum, Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub(crate) enum Kind {
     External,
     Budget,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
+#[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub(crate) struct Name(pub(crate) String);
 
 impl FromStr for Name {

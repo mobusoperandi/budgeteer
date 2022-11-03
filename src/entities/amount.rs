@@ -36,7 +36,17 @@ impl FromStr for Amount {
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq, Default)]
-pub(crate) struct NonNegativeAmount(Decimal);
+#[cfg_attr(test, derive(proptest_derive::Arbitrary))]
+pub(crate) struct NonNegativeAmount(
+    #[cfg_attr(test, proptest(strategy = "non_negative_decimal_strategy()"))] Decimal,
+);
+
+#[cfg(test)]
+fn non_negative_decimal_strategy() -> impl proptest::strategy::Strategy<Value = Decimal> {
+    use proptest::{arbitrary::any, strategy::Strategy};
+    (any::<u32>(), any::<u32>(), any::<u32>(), 0u32..28u32)
+        .prop_map(|(lo, mid, hi, scale)| Decimal::from_parts(lo, mid, hi, false, scale))
+}
 
 impl NonNegativeAmount {
     pub(crate) fn scale(&self) -> u32 {

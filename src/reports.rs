@@ -9,6 +9,7 @@ use chrono::NaiveDate;
 use cli_table::{Cell, Row, Table};
 use itertools::Itertools;
 
+#[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Report {
     TransactionRecordResponse,
     Balances,

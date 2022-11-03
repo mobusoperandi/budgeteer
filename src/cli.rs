@@ -79,18 +79,35 @@ pub(crate) struct RunningBalance {
     pub(crate) unit: unit::Name,
 }
 
-#[derive(clap::Args)]
+#[derive(Debug, Clone, clap::Args)]
+#[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub(crate) struct MoveAdd {
     #[clap(long)]
     pub(crate) transaction: transaction::Id,
     #[clap(long)]
+    #[cfg_attr(
+        test,
+        proptest(strategy = r#"prefixed_account_name_strategy("debit_".to_string())"#)
+    )]
     pub(crate) debit_account: account::Name,
     #[clap(long)]
+    #[cfg_attr(
+        test,
+        proptest(strategy = r#"prefixed_account_name_strategy("credit_".to_string())"#)
+    )]
     pub(crate) credit_account: account::Name,
     #[clap(long)]
     pub(crate) amount: NonNegativeAmount,
     #[clap(long)]
     pub(crate) unit: unit::Name,
+}
+
+#[cfg(test)]
+fn prefixed_account_name_strategy(
+    prefix: String,
+) -> impl proptest::strategy::Strategy<Value = account::Name> {
+    use proptest::strategy::Strategy;
+    proptest::arbitrary::any::<String>().prop_map(move |name| account::Name(prefix.clone() + &name))
 }
 
 #[test]
