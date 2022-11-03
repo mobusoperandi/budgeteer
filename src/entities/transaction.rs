@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::Error;
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Debug, PartialOrd, Ord)]
+#[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub(crate) struct Id(pub(crate) u64);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

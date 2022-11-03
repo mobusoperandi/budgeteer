@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub(crate) struct Name(pub(crate) String);
 
 impl Display for Name {
