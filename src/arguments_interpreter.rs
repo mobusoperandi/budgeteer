@@ -77,23 +77,17 @@ pub(crate) fn interpret(args: cli::Arguments) -> Result<Actions> {
 
 #[cfg(test)]
 mod test {
-    use chrono::{Datelike, NaiveDate};
     use proptest::{prelude::*, test_runner::TestRunner};
 
     use crate::{
         cli::{self, MoveAdd},
-        entities::{account, transaction, unit},
+        entities::{account, date::NaiveDate, transaction, unit},
         error::Error,
         events::{self, Event},
         reports::Report,
     };
 
     use super::{interpret, Actions};
-
-    fn naive_date_strategy() -> impl Strategy<Value = NaiveDate> {
-        (NaiveDate::MIN.num_days_from_ce()..NaiveDate::MAX.num_days_from_ce())
-            .prop_map(NaiveDate::from_num_days_from_ce)
-    }
 
     #[test]
     fn account_create() {
@@ -130,7 +124,7 @@ mod test {
     fn transaction_record() {
         let mut runner = TestRunner::default();
         runner
-            .run(&naive_date_strategy(), |date| {
+            .run(&any::<NaiveDate>(), |date| {
                 assert_eq!(
                     interpret(cli::Arguments {
                         category: cli::Category::Transaction(cli::Transaction::Record(

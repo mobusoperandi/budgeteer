@@ -6,6 +6,7 @@ mod entities {
     pub(crate) mod account;
     pub(crate) mod amount;
     pub(crate) mod balance;
+    pub(crate) mod date;
     pub(crate) mod move_;
     pub(crate) mod sum;
     pub(crate) mod transaction;

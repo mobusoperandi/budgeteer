@@ -1,9 +1,10 @@
 use std::{fmt::Display, str::FromStr};
 
-use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
+
+use super::date::NaiveDate;
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Debug, PartialOrd, Ord)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
@@ -28,5 +29,24 @@ impl FromStr for Id {
         s.parse()
             .map_err(Error::TransactionIdFailedToParse)
             .map(Self)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use proptest::prelude::*;
+    use proptest::test_runner::TestRunner;
+
+    use super::Id;
+
+    #[test]
+    fn impl_display_for_id() {
+        let mut runner = TestRunner::default();
+        runner
+            .run(&any::<Id>(), |id| {
+                assert_eq!(id.to_string(), format!("#{}", id.0));
+                Ok(())
+            })
+            .unwrap();
     }
 }

@@ -1,5 +1,4 @@
-use crate::entities::{account, amount::NonNegativeAmount, transaction, unit};
-use chrono::NaiveDate;
+use crate::entities::{account, amount::NonNegativeAmount, date::NaiveDate, transaction, unit};
 
 #[derive(clap::Parser)]
 pub(crate) struct Arguments {

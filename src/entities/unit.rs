@@ -22,7 +22,8 @@ impl FromStr for Name {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub(crate) struct Unit {
     pub(crate) _name: Name,
     pub(crate) decimal_places: u8,

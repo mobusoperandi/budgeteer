@@ -34,3 +34,34 @@ impl Display for Name {
         self.0.fmt(f)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::Name;
+    use proptest::{prelude::*, test_runner::TestRunner};
+
+    #[test]
+    fn impl_from_str_for_name() {
+        let mut runner = TestRunner::default();
+        runner
+            .run(&any::<String>(), |string| {
+                assert_eq!(
+                    <Name as std::str::FromStr>::from_str(&string).unwrap(),
+                    Name(string)
+                );
+                Ok(())
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn impl_display_for_name() {
+        let mut runner = TestRunner::default();
+        runner
+            .run(&any::<Name>(), |name| {
+                assert_eq!(name.to_string(), name.0);
+                Ok(())
+            })
+            .unwrap();
+    }
+}

@@ -1,11 +1,11 @@
 use std::{collections::BTreeMap, ops};
 
+use crate::entities::date::NaiveDate;
 use crate::error::{Error, Result};
 use crate::{
     entities::{account, amount::Amount, transaction, unit},
     events::Events,
 };
-use chrono::NaiveDate;
 use cli_table::{Cell, Row, Table};
 use itertools::Itertools;
 
@@ -34,7 +34,6 @@ impl Report {
                     let sums = balance.0.into_iter().flat_map(|(name, amount)| {
                         [
                             amount
-                                .0
                                 .to_string()
                                 .cell()
                                 .justify(cli_table::format::Justify::Right),
