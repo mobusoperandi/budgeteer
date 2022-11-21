@@ -1,7 +1,9 @@
-use std::{fmt::Display, num::ParseIntError, str::FromStr};
+use std::{fmt::Display, str::FromStr};
 
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
+
+use crate::error::Error;
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Debug, PartialOrd, Ord)]
 pub(crate) struct Id(pub(crate) u64);
@@ -19,9 +21,11 @@ impl Display for Id {
 }
 
 impl FromStr for Id {
-    type Err = ParseIntError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(s.parse()?))
+        s.parse()
+            .map_err(Error::TransactionIdFailedToParse)
+            .map(Self)
     }
 }

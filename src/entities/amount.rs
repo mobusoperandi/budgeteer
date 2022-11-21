@@ -1,8 +1,8 @@
-use std::{fmt::Display, ops, str::FromStr};
-
-use anyhow::{anyhow, Result};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::{fmt::Display, ops, str::FromStr};
+
+use crate::error::Error;
 
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq, Default)]
 pub(crate) struct Amount(pub(crate) Decimal);
@@ -26,10 +26,12 @@ impl Display for Amount {
 }
 
 impl FromStr for Amount {
-    type Err = rust_decimal::Error;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(Decimal::from_str_exact(s)?))
+        Decimal::from_str_exact(s)
+            .map_err(Error::AmountFailedToParseDecimal)
+            .map(Self)
     }
 }
 
@@ -43,12 +45,13 @@ impl NonNegativeAmount {
 }
 
 impl FromStr for NonNegativeAmount {
-    type Err = anyhow::Error;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let decimal = Decimal::from_str_exact(s)?;
+        let decimal =
+            Decimal::from_str_exact(s).map_err(Error::NonNegativeAmountFailedToParseDecimal)?;
         if decimal.is_sign_negative() {
-            Err(anyhow!("Expected non-negative amount"))
+            Err(Error::NonNegativeAmountParsedNegativeDecimal)
         } else {
             Ok(Self(decimal))
         }

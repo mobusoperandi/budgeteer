@@ -11,12 +11,13 @@ mod entities {
     pub(crate) mod transaction;
     pub(crate) mod unit;
 }
+mod error;
 mod events;
 mod reports;
 mod views;
 
-use anyhow::Result;
 use clap::Parser;
+use error::{Error, Result};
 use std::{
     env, fs,
     io::{Seek, Write},
@@ -39,10 +40,20 @@ fn main() {
     let mut persistence_file = file_options
         .open(&persistence_file_path)
         .or_else(|_| -> Result<_> {
-            let mut new_persistence_file =
-                file_options.create(true).open(&persistence_file_path)?;
-            new_persistence_file.write_all(ron::to_string(&Vec::<Event>::new())?.as_bytes())?;
-            new_persistence_file.rewind()?;
+            let mut new_persistence_file = file_options
+                .create(true)
+                .open(&persistence_file_path)
+                .map_err(Error::PersistenceFileOpenFailed)?;
+            new_persistence_file
+                .write_all(
+                    ron::to_string(&Vec::<Event>::new())
+                        .map_err(Error::EventsFailedToSerialize)?
+                        .as_bytes(),
+                )
+                .map_err(Error::PersistenceFailedToInitialze)?;
+            new_persistence_file
+                .rewind()
+                .map_err(Error::PersistenceFailedToRewindInitializedFile)?;
             Ok(new_persistence_file)
         })
         .unwrap();

@@ -3,6 +3,8 @@ use std::{fmt::Display, str::FromStr};
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 
+use crate::error::Error;
+
 pub(crate) struct Account {
     pub(crate) _kind: Kind,
     pub(crate) _name: Name,
@@ -18,7 +20,7 @@ pub(crate) enum Kind {
 pub(crate) struct Name(pub(crate) String);
 
 impl FromStr for Name {
-    type Err = String;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self(String::from(s)))

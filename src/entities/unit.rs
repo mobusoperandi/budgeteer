@@ -2,6 +2,8 @@ use std::{fmt::Display, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 
+use crate::error::Error;
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct Name(pub(crate) String);
 
@@ -12,7 +14,7 @@ impl Display for Name {
 }
 
 impl FromStr for Name {
-    type Err = String;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self(s.into()))

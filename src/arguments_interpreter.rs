@@ -1,7 +1,6 @@
-use anyhow::{bail, Result};
-
 use crate::{
     cli,
+    error::{Error, Result},
     events::{self, Event},
     reports::Report,
 };
@@ -51,7 +50,7 @@ pub(crate) fn interpret(args: cli::Arguments) -> Result<Actions> {
             unit,
         })) => {
             if debit_account == credit_account {
-                bail!("Debit account equals credit account");
+                return Err(Error::ArgumentsInterpreterMoveAddSameAccount(debit_account));
             }
             Ok(Actions {
                 event: Some(Event::MoveAdded(events::MoveAdded {

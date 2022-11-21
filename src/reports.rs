@@ -1,10 +1,10 @@
 use std::{collections::BTreeMap, ops};
 
+use crate::error::{Error, Result};
 use crate::{
     entities::{account, amount::Amount, transaction, unit},
     events::Events,
 };
-use anyhow::{anyhow, Result};
 use chrono::NaiveDate;
 use cli_table::{Cell, Row, Table};
 use itertools::Itertools;
@@ -108,7 +108,7 @@ impl Report {
 
                 let transaction_date = events
                     .get_transaction(id)
-                    .ok_or_else(|| anyhow!("No such trasnaction"))?
+                    .ok_or(Error::ReportTransactionShowTransactionNotFound(*id))?
                     .date
                     .format("%F");
 

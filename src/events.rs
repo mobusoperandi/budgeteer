@@ -1,4 +1,5 @@
 use crate::entities::{account, amount::NonNegativeAmount, transaction, unit};
+use crate::error::{Error, Result};
 use chrono::NaiveDate;
 use itertools::Itertools;
 use readext::ReadExt;
@@ -46,32 +47,32 @@ impl Events {
     pub(crate) fn iter(&self) -> std::slice::Iter<Event> {
         self.0.iter()
     }
-    pub(crate) fn try_from_reader(
-        reader: &mut impl io::Read,
-    ) -> Result<Events, Box<dyn std::error::Error>> {
-        let contents = reader.read_into_string()?;
+    pub(crate) fn try_from_reader(reader: &mut impl io::Read) -> Result<Events> {
+        let contents = reader
+            .read_into_string()
+            .map_err(Error::EventsFailedToReadIntoString)?;
 
-        let events: Vec<Event> = ron::from_str(&contents)?;
-        let validated_events = events.into_iter().try_fold(
-            Events(vec![]),
-            |mut validated_events, event| -> Result<Events, String> {
-                validated_events.try_push(event)?;
-                Ok(validated_events)
-            },
-        )?;
+        let events: Vec<Event> =
+            ron::from_str(&contents).map_err(Error::EventsFailedToDeserialize)?;
+        let validated_events =
+            events
+                .into_iter()
+                .try_fold(Events(vec![]), |mut validated_events, event| {
+                    validated_events.try_push(event)?;
+                    Ok(validated_events)
+                })?;
         Ok(validated_events)
     }
-    pub(crate) fn try_push(&mut self, event: Event) -> Result<(), String> {
+    pub(crate) fn try_push(&mut self, event: Event) -> Result<()> {
         event.validate_for_appending_to(self)?;
         self.0.push(event);
         Ok(())
     }
-    pub(crate) fn try_write(
-        &self,
-        writer: &mut impl io::Write,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let serialized = ron::to_string(&self.0)?;
-        writer.write_all(serialized.as_bytes())?;
+    pub(crate) fn try_write(&self, writer: &mut impl io::Write) -> Result<()> {
+        let serialized = ron::to_string(&self.0).map_err(Error::EventsFailedToSerialize)?;
+        writer
+            .write_all(serialized.as_bytes())
+            .map_err(Error::EventsFailedToWrite)?;
         Ok(())
     }
 }
@@ -86,12 +87,14 @@ fn ron() {
     assert_eq!(value, parsed);
 }
 impl Event {
-    fn validate_for_appending_to(&self, events: &Events) -> Result<(), String> {
+    fn validate_for_appending_to(&self, events: &Events) -> Result<()> {
         match self {
             Event::AccountCreated(AccountCreated { name, .. }) => {
                 let name_collision = events.all_account_names().into_iter().contains(name);
                 match name_collision {
-                    true => Err("Name collision detected!".into()),
+                    true => Err(
+                        Error::EventValidateForAppendingToAccountCreatedNameCollision(name.clone()),
+                    ),
                     false => Ok(()),
                 }
             }
@@ -99,7 +102,9 @@ impl Event {
             Event::UnitCreated(UnitCreated { name, .. }) => {
                 let name_collision = events.all_unit_names().into_iter().contains(name);
                 match name_collision {
-                    true => Err("Name collision detected!".into()),
+                    true => Err(Error::EventValidateForAppendingToUnitCreatedNameCollision(
+                        name.clone(),
+                    )),
                     false => Ok(()),
                 }
             }
@@ -115,31 +120,44 @@ impl Event {
                     .into_iter()
                     .contains(transaction);
                 if !transaction_found {
-                    return Err(format!("Transaction not found for id: {transaction}"));
+                    return Err(
+                        Error::EventValidateForAppendingToMoveAddedTransactionNotFound(
+                            *transaction,
+                        ),
+                    );
                 }
                 let debit_account_found = events
                     .all_account_names()
                     .into_iter()
                     .contains(debit_account);
                 if !debit_account_found {
-                    return Err(format!("Debit account not found {debit_account}"));
+                    return Err(
+                        Error::EventValidateForAppendingToMoveAddedDebitAccountNotFound(
+                            debit_account.clone(),
+                        ),
+                    );
                 }
                 let credit_account_found = events
                     .all_account_names()
                     .into_iter()
                     .contains(credit_account);
                 if !credit_account_found {
-                    return Err(format!("Credit account not found {credit_account}"));
+                    return Err(
+                        Error::EventValidateForAppendingToMoveAddedCreditAccountNotFound(
+                            credit_account.clone(),
+                        ),
+                    );
                 }
-                let unit = events
-                    .get_unit(unit)
-                    .ok_or(format!("Unit not found {unit}"))?;
+                let unit = events.get_unit(unit).ok_or_else(|| {
+                    Error::EventValidateForAppendingToMoveAddedUnitNotFound(unit.clone())
+                })?;
                 if amount.scale() != unit.decimal_places as u32 {
-                    return Err(format!(
-                        "Amount decimal places {} is different than the unit decimal places {}",
-                        amount.scale(),
-                        unit.decimal_places
-                    ));
+                    return Err(
+                        Error::EventValidateForAppendingToMoveAddedDecimalPlacesMismatch {
+                            unit_scale: unit.decimal_places,
+                            amount_scale: amount.scale(),
+                        },
+                    );
                 }
                 Ok(())
             }
