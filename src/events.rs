@@ -41,7 +41,7 @@ pub(crate) struct MoveAdded {
 }
 
 #[derive(Debug)]
-pub(crate) struct Events(Vec<Event>);
+pub(crate) struct Events(pub(super) Vec<Event>);
 
 impl Events {
     pub(crate) fn iter(&self) -> std::slice::Iter<Event> {
@@ -66,13 +66,6 @@ impl Events {
     pub(crate) fn try_push(&mut self, event: Event) -> Result<()> {
         event.validate_for_appending_to(self)?;
         self.0.push(event);
-        Ok(())
-    }
-    pub(crate) fn try_write(&self, writer: &mut impl io::Write) -> Result<()> {
-        let serialized = ron::to_string(&self.0).map_err(Error::EventsFailedToSerialize)?;
-        writer
-            .write_all(serialized.as_bytes())
-            .map_err(Error::EventsFailedToWrite)?;
         Ok(())
     }
 }

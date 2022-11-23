@@ -62,7 +62,7 @@ fn main() {
         events.try_push(event).unwrap();
         persistence_file.rewind().unwrap();
         persistence_file.set_len(0).unwrap();
-        events.try_write(&mut persistence_file).unwrap();
+        ron::ser::to_writer(&mut persistence_file, &events.0).unwrap();
     }
     if let Some(report) = report {
         let report = report.compile(&events).unwrap();

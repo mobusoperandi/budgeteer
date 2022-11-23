@@ -30,8 +30,6 @@ pub(crate) enum Error {
     EventsFailedToDeserialize(ron::error::SpannedError),
     #[error("serializing events: {0}")]
     EventsFailedToSerialize(ron::Error),
-    #[error("writing events: {0}")]
-    EventsFailedToWrite(std::io::Error),
     #[error("generating report `TransactionShow`: transaction not found: {0}")]
     ReportTransactionShowTransactionNotFound(transaction::Id),
     #[error("invalid arguments: `MoveAdd`: same account: {0}")]
