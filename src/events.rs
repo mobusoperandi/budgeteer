@@ -1,5 +1,5 @@
 use crate::entities::{account, amount::NonNegativeAmount, transaction, unit};
-use crate::error::{Error, Result};
+use crate::error::{Error, EventValidateForAppendingToError, Result};
 use chrono::NaiveDate;
 use itertools::Itertools;
 use readext::ReadExt;
@@ -59,7 +59,7 @@ impl Events {
                 .into_iter()
                 .try_fold(Events(vec![]), |mut validated_events, event| {
                     validated_events.try_push(event)?;
-                    Ok(validated_events)
+                    Ok::<Events, Error>(validated_events)
                 })?;
         Ok(validated_events)
     }
@@ -80,13 +80,16 @@ fn ron() {
     assert_eq!(value, parsed);
 }
 impl Event {
-    fn validate_for_appending_to(&self, events: &Events) -> Result<()> {
+    fn validate_for_appending_to(
+        &self,
+        events: &Events,
+    ) -> Result<(), EventValidateForAppendingToError> {
         match self {
             Event::AccountCreated(AccountCreated { name, .. }) => {
                 let name_collision = events.all_account_names().into_iter().contains(name);
                 match name_collision {
                     true => Err(
-                        Error::EventValidateForAppendingToAccountCreatedNameCollision(name.clone()),
+                        EventValidateForAppendingToError::AccountCreatedNameCollision(name.clone()),
                     ),
                     false => Ok(()),
                 }
@@ -95,7 +98,7 @@ impl Event {
             Event::UnitCreated(UnitCreated { name, .. }) => {
                 let name_collision = events.all_unit_names().into_iter().contains(name);
                 match name_collision {
-                    true => Err(Error::EventValidateForAppendingToUnitCreatedNameCollision(
+                    true => Err(EventValidateForAppendingToError::UnitCreatedNameCollision(
                         name.clone(),
                     )),
                     false => Ok(()),
@@ -114,7 +117,7 @@ impl Event {
                     .contains(transaction);
                 if !transaction_found {
                     return Err(
-                        Error::EventValidateForAppendingToMoveAddedTransactionNotFound(
+                        EventValidateForAppendingToError::MoveAddedTransactionNotFound(
                             *transaction,
                         ),
                     );
@@ -125,7 +128,7 @@ impl Event {
                     .contains(debit_account);
                 if !debit_account_found {
                     return Err(
-                        Error::EventValidateForAppendingToMoveAddedDebitAccountNotFound(
+                        EventValidateForAppendingToError::MoveAddedDebitAccountNotFound(
                             debit_account.clone(),
                         ),
                     );
@@ -136,17 +139,17 @@ impl Event {
                     .contains(credit_account);
                 if !credit_account_found {
                     return Err(
-                        Error::EventValidateForAppendingToMoveAddedCreditAccountNotFound(
+                        EventValidateForAppendingToError::MoveAddedCreditAccountNotFound(
                             credit_account.clone(),
                         ),
                     );
                 }
                 let unit = events.get_unit(unit).ok_or_else(|| {
-                    Error::EventValidateForAppendingToMoveAddedUnitNotFound(unit.clone())
+                    EventValidateForAppendingToError::MoveAddedUnitNotFound(unit.clone())
                 })?;
                 if amount.scale() != unit.decimal_places as u32 {
                     return Err(
-                        Error::EventValidateForAppendingToMoveAddedDecimalPlacesMismatch {
+                        EventValidateForAppendingToError::MoveAddedDecimalPlacesMismatch {
                             unit_scale: unit.decimal_places,
                             amount_scale: amount.scale(),
                         },
