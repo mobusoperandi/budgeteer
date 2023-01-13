@@ -1,3 +1,5 @@
+use std::{collections::BTreeSet, fmt::Display};
+
 use crate::entities::{account, transaction, unit};
 
 #[derive(Debug, thiserror::Error)]
@@ -11,7 +13,7 @@ pub(crate) enum Error {
     #[error("parsing `transaction::Id`: {0}")]
     TransactionIdFailedToParse(std::num::ParseIntError),
     #[error("event invalid for appending: {0}")]
-    EventValidateForAppendingTo(#[from] EventValidateForAppendingToError),
+    EventValidateForAppendingTo(#[from] EventValidateForAppendingToErrorSet),
     #[error("reading serialized events into string: {0}")]
     EventsFailedToReadIntoString(std::io::Error),
     #[error("deserializing events: {0}")]
@@ -30,7 +32,31 @@ pub(crate) enum Error {
     PersistenceFailedToRewindInitializedFile(std::io::Error),
 }
 
-#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+#[derive(Debug, thiserror::Error, PartialEq, Eq, Default)]
+pub(crate) struct EventValidateForAppendingToErrorSet(BTreeSet<EventValidateForAppendingToError>);
+impl Display for EventValidateForAppendingToErrorSet {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl EventValidateForAppendingToErrorSet {
+    pub(crate) fn single(error: EventValidateForAppendingToError) -> Self {
+        let mut set = Self::default();
+        set.insert(error);
+        set
+    }
+
+    pub(crate) fn insert(&mut self, error: EventValidateForAppendingToError) -> bool {
+        self.0.insert(error)
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+#[derive(Debug, thiserror::Error, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum EventValidateForAppendingToError {
     #[error("`AccountCreated`: `account::Name` collision: {0}")]
     AccountCreatedNameCollision(account::Name),
