@@ -1,5 +1,7 @@
 use crate::entities::{account, amount::NonNegativeAmount, transaction, unit};
-use crate::error::{Error, EventValidateForAppendingToError, Result};
+use crate::error::{
+    Error, EventValidateForAppendingToError, EventValidateForAppendingToErrorSet, Result,
+};
 use chrono::NaiveDate;
 use itertools::Itertools;
 use readext::ReadExt;
@@ -83,14 +85,14 @@ impl Event {
     fn validate_for_appending_to(
         &self,
         events: &Events,
-    ) -> Result<(), EventValidateForAppendingToError> {
+    ) -> Result<(), EventValidateForAppendingToErrorSet> {
         match self {
             Event::AccountCreated(AccountCreated { name, .. }) => {
                 let name_collision = events.all_account_names().into_iter().contains(name);
                 match name_collision {
-                    true => Err(
+                    true => Err(EventValidateForAppendingToErrorSet::single(
                         EventValidateForAppendingToError::AccountCreatedNameCollision(name.clone()),
-                    ),
+                    )),
                     false => Ok(()),
                 }
             }
@@ -98,8 +100,8 @@ impl Event {
             Event::UnitCreated(UnitCreated { name, .. }) => {
                 let name_collision = events.all_unit_names().into_iter().contains(name);
                 match name_collision {
-                    true => Err(EventValidateForAppendingToError::UnitCreatedNameCollision(
-                        name.clone(),
+                    true => Err(EventValidateForAppendingToErrorSet::single(
+                        EventValidateForAppendingToError::UnitCreatedNameCollision(name.clone()),
                     )),
                     false => Ok(()),
                 }
@@ -115,8 +117,9 @@ impl Event {
                     .all_transaction_ids()
                     .into_iter()
                     .contains(transaction);
+                let mut errors = EventValidateForAppendingToErrorSet::default();
                 if !transaction_found {
-                    return Err(
+                    errors.insert(
                         EventValidateForAppendingToError::MoveAddedTransactionNotFound(
                             *transaction,
                         ),
@@ -127,7 +130,7 @@ impl Event {
                     .into_iter()
                     .contains(debit_account);
                 if !debit_account_found {
-                    return Err(
+                    errors.insert(
                         EventValidateForAppendingToError::MoveAddedDebitAccountNotFound(
                             debit_account.clone(),
                         ),
@@ -138,24 +141,29 @@ impl Event {
                     .into_iter()
                     .contains(credit_account);
                 if !credit_account_found {
-                    return Err(
+                    errors.insert(
                         EventValidateForAppendingToError::MoveAddedCreditAccountNotFound(
                             credit_account.clone(),
                         ),
                     );
                 }
-                let unit = events.get_unit(unit).ok_or_else(|| {
-                    EventValidateForAppendingToError::MoveAddedUnitNotFound(unit.clone())
-                })?;
+                let Some(unit) = events.get_unit(unit) else {
+                    errors.insert(EventValidateForAppendingToError::MoveAddedUnitNotFound(unit.clone()));
+                    return Err(errors);
+                };
                 if amount.scale() != unit.decimal_places as u32 {
-                    return Err(
+                    errors.insert(
                         EventValidateForAppendingToError::MoveAddedDecimalPlacesMismatch {
                             unit_scale: unit.decimal_places,
                             amount_scale: amount.scale(),
                         },
                     );
                 }
-                Ok(())
+                if errors.is_empty() {
+                    Ok(())
+                } else {
+                    Err(errors)
+                }
             }
         }
     }
