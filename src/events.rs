@@ -1,6 +1,7 @@
 use crate::entities::{account, amount::NonNegativeAmount, transaction, unit};
 use crate::error::{
-    Error, EventValidateForAppendingToError, EventValidateForAppendingToErrorSet, Result,
+    Error, EventValidateForAppendingToError, EventValidateForAppendingToErrorMoveAdded,
+    EventValidateForAppendingToErrorMoveAddedUnit, Result,
 };
 use chrono::NaiveDate;
 use itertools::Itertools;
@@ -85,14 +86,14 @@ impl Event {
     fn validate_for_appending_to(
         &self,
         events: &Events,
-    ) -> Result<(), EventValidateForAppendingToErrorSet> {
+    ) -> Result<(), EventValidateForAppendingToError> {
         match self {
             Event::AccountCreated(AccountCreated { name, .. }) => {
                 let name_collision = events.all_account_names().into_iter().contains(name);
                 match name_collision {
-                    true => Err(EventValidateForAppendingToErrorSet::single(
+                    true => Err(
                         EventValidateForAppendingToError::AccountCreatedNameCollision(name.clone()),
-                    )),
+                    ),
                     false => Ok(()),
                 }
             }
@@ -100,8 +101,8 @@ impl Event {
             Event::UnitCreated(UnitCreated { name, .. }) => {
                 let name_collision = events.all_unit_names().into_iter().contains(name);
                 match name_collision {
-                    true => Err(EventValidateForAppendingToErrorSet::single(
-                        EventValidateForAppendingToError::UnitCreatedNameCollision(name.clone()),
+                    true => Err(EventValidateForAppendingToError::UnitCreatedNameCollision(
+                        name.clone(),
                     )),
                     false => Ok(()),
                 }
@@ -113,56 +114,52 @@ impl Event {
                 amount,
                 unit,
             }) => {
+                let mut error: Option<EventValidateForAppendingToErrorMoveAdded> = None;
+
                 let transaction_found = events
                     .all_transaction_ids()
                     .into_iter()
                     .contains(transaction);
-                let mut errors = EventValidateForAppendingToErrorSet::default();
                 if !transaction_found {
-                    errors.insert(
-                        EventValidateForAppendingToError::MoveAddedTransactionNotFound(
-                            *transaction,
-                        ),
-                    );
+                    error
+                        .get_or_insert(Default::default())
+                        .transaction_not_found = Some(*transaction);
                 }
                 let debit_account_found = events
                     .all_account_names()
                     .into_iter()
                     .contains(debit_account);
                 if !debit_account_found {
-                    errors.insert(
-                        EventValidateForAppendingToError::MoveAddedDebitAccountNotFound(
-                            debit_account.clone(),
-                        ),
-                    );
+                    error
+                        .get_or_insert(Default::default())
+                        .debit_account_not_found = Some(debit_account.clone());
                 }
                 let credit_account_found = events
                     .all_account_names()
                     .into_iter()
                     .contains(credit_account);
                 if !credit_account_found {
-                    errors.insert(
-                        EventValidateForAppendingToError::MoveAddedCreditAccountNotFound(
-                            credit_account.clone(),
-                        ),
-                    );
+                    error
+                        .get_or_insert(Default::default())
+                        .credit_account_not_found = Some(credit_account.clone());
                 }
                 let Some(unit) = events.get_unit(unit) else {
-                    errors.insert(EventValidateForAppendingToError::MoveAddedUnitNotFound(unit.clone()));
-                    return Err(errors);
+                    let mut error = error.unwrap_or_default();
+                    error.unit = Some(EventValidateForAppendingToErrorMoveAddedUnit::UnitNotFound(unit.clone()));
+                    return Err(EventValidateForAppendingToError::MoveAdded(error));
                 };
                 if amount.scale() != unit.decimal_places as u32 {
-                    errors.insert(
-                        EventValidateForAppendingToError::MoveAddedDecimalPlacesMismatch {
+                    error.get_or_insert(Default::default()).unit = Some(
+                        EventValidateForAppendingToErrorMoveAddedUnit::DecimalPlacesMismatch {
                             unit_scale: unit.decimal_places,
                             amount_scale: amount.scale(),
                         },
                     );
                 }
-                if errors.is_empty() {
-                    Ok(())
+                if let Some(error) = error {
+                    Err(EventValidateForAppendingToError::MoveAdded(error))
                 } else {
-                    Err(errors)
+                    Ok(())
                 }
             }
         }
