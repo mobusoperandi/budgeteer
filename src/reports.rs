@@ -83,7 +83,7 @@ impl Report {
                     .into_iter()
                     .map(|(transaction_id, (transaction_date, affect, balance))| {
                         [
-                            format!("{} {}", transaction_id, transaction_date).cell(),
+                            format!("{transaction_id} {transaction_date}").cell(),
                             format!("{affect:+}").cell(),
                             balance.cell(),
                         ]
