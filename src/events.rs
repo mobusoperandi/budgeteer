@@ -354,6 +354,8 @@ mod test {
                                     .unwrap()
                                     .clone();
 
+                                // ToDo: setup invalidities here
+                                compile_error!();
                                 NonNegativeAmount::arbitrary_with(Some(
                                     unit_created_event.decimal_places,
                                 ))
