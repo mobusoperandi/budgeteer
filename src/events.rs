@@ -304,7 +304,7 @@ mod test {
                     let units_length = observations.unit_created_events.len();
                     assert!(transaction_ids_length > 0);
                     assert!(account_names_length >= 2);
-                    assert!(units_length > 0);
+                    assert!(units_length >= 1);
                     (
                         any::<Index>(),
                         any::<Index>(),
