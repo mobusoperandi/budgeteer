@@ -1,5 +1,3 @@
-use std::{collections::BTreeSet, fmt::Display};
-
 use crate::entities::{account, transaction, unit};
 
 #[derive(Debug, thiserror::Error)]
@@ -13,7 +11,7 @@ pub(crate) enum Error {
     #[error("parsing `transaction::Id`: {0}")]
     TransactionIdFailedToParse(std::num::ParseIntError),
     #[error("event invalid for appending: {0}")]
-    EventValidateForAppendingTo(#[from] EventValidateForAppendingToErrorSet),
+    EventValidateForAppendingTo(#[from] EventValidateForAppendingToError),
     #[error("reading serialized events into string: {0}")]
     EventsFailedToReadIntoString(std::io::Error),
     #[error("deserializing events: {0}")]
@@ -32,28 +30,19 @@ pub(crate) enum Error {
     PersistenceFailedToRewindInitializedFile(std::io::Error),
 }
 
-#[derive(Debug, thiserror::Error, PartialEq, Eq, Default)]
-pub(crate) struct EventValidateForAppendingToErrorSet(BTreeSet<EventValidateForAppendingToError>);
-impl Display for EventValidateForAppendingToErrorSet {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{self:?}")
-    }
+#[derive(Debug, thiserror::Error, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[error("{self:?}")]
+pub(crate) struct EventValidateForAppendingToErrorMoveAdded {
+    pub(crate) transaction_not_found: Option<transaction::Id>,
+    pub(crate) debit_account_not_found: Option<account::Name>,
+    pub(crate) credit_account_not_found: Option<account::Name>,
+    pub(crate) unit: Option<EventValidateForAppendingToErrorMoveAddedUnit>,
 }
 
-impl EventValidateForAppendingToErrorSet {
-    pub(crate) fn single(error: EventValidateForAppendingToError) -> Self {
-        let mut set = Self::default();
-        set.insert(error);
-        set
-    }
-
-    pub(crate) fn insert(&mut self, error: EventValidateForAppendingToError) -> bool {
-        self.0.insert(error)
-    }
-
-    pub(crate) fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum EventValidateForAppendingToErrorMoveAddedUnit {
+    UnitNotFound(unit::Name),
+    DecimalPlacesMismatch { unit_scale: u8, amount_scale: u32 },
 }
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq, PartialOrd, Ord)]
@@ -62,16 +51,8 @@ pub(crate) enum EventValidateForAppendingToError {
     AccountCreatedNameCollision(account::Name),
     #[error("`UnitCreated`: `unit::Name` collision: {0}")]
     UnitCreatedNameCollision(unit::Name),
-    #[error("`MoveAdded`: `transaction:Id` not found: {0}")]
-    MoveAddedTransactionNotFound(transaction::Id),
-    #[error("`MoveAdded`: debit account not found: {0}")]
-    MoveAddedDebitAccountNotFound(account::Name),
-    #[error("`MoveAdded`: credit account not found: {0}")]
-    MoveAddedCreditAccountNotFound(account::Name),
-    #[error("`MoveAdded`: unit not found: {0}")]
-    MoveAddedUnitNotFound(unit::Name),
-    #[error("`MoveAdded`: decimal places mismatch: unit scale: {unit_scale}, amount scale: {amount_scale}")]
-    MoveAddedDecimalPlacesMismatch { unit_scale: u8, amount_scale: u32 },
+    #[error("{0}")]
+    MoveAdded(EventValidateForAppendingToErrorMoveAdded),
 }
 
 pub(crate) type Result<T, E = Error> = std::result::Result<T, E>;
