@@ -326,14 +326,13 @@ mod test {
                     } else {
                         select(observations.account_names.into_iter().collect_vec()).boxed()
                     };
-                    let credit_account_strategy = if invalidities.credit_account_not_found {
-                        (&debit_account_strategy, &any::<account::Name>())
-                            .prop_filter("credit account name happens to be valid", |(debit_account_name, name)| {
-                                !observations.account_names.contains(name)
-                            })
-                            .boxed()
-                    } else {
-                        select(observations.account_names.into_iter().collect_vec()).boxed()
+                    let credit_account_strategy =
+                        (&debit_account_strategy, &debit_account_strategy.clone()).prop_filter_map(
+                            "debit and credit account names identical",
+                            |(debit, credit)| (debit != credit).then_some(credit),
+                        );
+                    let unit_strategy = match invalidities.unit_related {
+                        
                     };
                     todo!()
                 }
