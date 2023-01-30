@@ -172,7 +172,7 @@ mod test {
     use std::{collections::BTreeSet, io};
 
     use crate::{
-        entities::{account, transaction, unit::Unit},
+        entities::{account, amount::Amount, transaction, unit::Unit},
         error::Error,
         events::AccountCreated,
     };
@@ -331,16 +331,33 @@ mod test {
                             "debit and credit account names identical",
                             |(debit, credit)| (debit != credit).then_some(credit),
                         );
-                    let unit_strategy = match invalidities.unit_related {
-                        Some(UnitRelatedInvalidMoveAddedReason::UnitNotFound) => any::<unit::Name>(
+                    let unit_and_amount_strategy = match invalidities.unit_related {
+                        Some(UnitRelatedInvalidMoveAddedReason::UnitNotFound) => {
+                            (any::<unit::Name>(), any::<NonNegativeAmount>())
+                                .prop_filter(
+                                    "unit name happens to be valid",
+                                    |(unit_name, _amount)| {
+                                        !observations.unit_created_events.iter().any(
+                                            |unit_created_event| {
+                                                unit_name == &unit_created_event.name
+                                            },
+                                        )
+                                    },
+                                )
+                                .boxed()
+                        }
+                        Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch) => (
+                            select(observations.unit_created_events),
+                            any::<NonNegativeAmount>(),
                         )
-                        .prop_filter("unit name happens to be valid", |name| {
-                            !observations
-                                .unit_created_events
-                                .iter()
-                                .any(|unit_created_event| name == &unit_created_event.name)
-                        }),
-                        Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch) => todo!(),
+                            .prop_filter_map(
+                                "amount scale happens to match unit",
+                                |(unit_event, amount)| {
+                                    (amount.scale() == unit_event.decimal_places.into())
+                                        .then_some((unit_event.name, amount))
+                                },
+                            )
+                            .boxed(),
                         None => todo!(),
                     };
                     todo!()
