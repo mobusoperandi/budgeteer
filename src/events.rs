@@ -179,7 +179,12 @@ mod test {
 
     use super::*;
     use bytes::{buf::Reader, Buf, Bytes};
-    use proptest::{prelude::*, sample::Index, strategy::Union, test_runner::TestRunner};
+    use proptest::{
+        prelude::*,
+        sample::{select, Index},
+        strategy::Union,
+        test_runner::TestRunner,
+    };
 
     #[derive(Debug, Default, Clone)]
     pub(crate) struct Observations {
@@ -312,6 +317,15 @@ mod test {
                         (0..transaction_ids_length).boxed()
                     }
                     .prop_map(transaction::Id);
+                    let debit_account_strategy = if invalidities.debit_account_not_found {
+                        any::<account::Name>()
+                            .prop_filter("debit account name happens to be valid", |name| {
+                                !observations.account_names.contains(name)
+                            })
+                            .boxed()
+                    } else {
+                        select(observations.account_names.into_iter().collect_vec()).boxed()
+                    };
                     todo!()
                 }
                 ArbitraryMoveAddedParam::WithTransactionIdAbove(count) => (
