@@ -332,7 +332,16 @@ mod test {
                             |(debit, credit)| (debit != credit).then_some(credit),
                         );
                     let unit_strategy = match invalidities.unit_related {
-                        
+                        Some(UnitRelatedInvalidMoveAddedReason::UnitNotFound) => any::<unit::Name>(
+                        )
+                        .prop_filter("unit name happens to be valid", |name| {
+                            !observations
+                                .unit_created_events
+                                .iter()
+                                .any(|unit_created_event| name == &unit_created_event.name)
+                        }),
+                        Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch) => todo!(),
+                        None => todo!(),
                     };
                     todo!()
                 }
