@@ -353,77 +353,40 @@ mod test {
                             .prop_filter_map(
                                 "amount scale happens to match unit",
                                 |(unit_event, amount)| {
-                                    (amount.scale() == unit_event.decimal_places.into())
+                                    (amount.scale() == unit_event.decimal_places as u32)
                                         .then_some((unit_event.name, amount))
                                 },
                             )
                             .boxed(),
-                        None => todo!(),
+                        None => select(observations.unit_created_events)
+                            .prop_flat_map(|unit_created_event| {
+                                (
+                                    Just(unit_created_event.name),
+                                    NonNegativeAmount::arbitrary_with(Some(
+                                        unit_created_event.decimal_places,
+                                    )),
+                                )
+                            })
+                            .boxed(),
                     };
-                    todo!()
-                }
-                ArbitraryMoveAddedParam::WithTransactionIdAbove(count) => (
-                    (count..=u64::MAX).prop_map(transaction::Id),
-                    any::<account::Name>(),
-                    any::<account::Name>(),
-                    any::<Unit>(),
-                )
-                    .prop_filter(
-                        "debit and credit account names identical",
-                        |(_transaction_id, debit_account_name, credit_account_name, _unit)| {
-                            debit_account_name != credit_account_name
-                        },
+                    (
+                        transaction_id_strategy,
+                        debit_account_strategy,
+                        credit_account_strategy,
+                        unit_and_amount_strategy,
                     )
-                    .prop_flat_map(|(transaction, debit_account, credit_account, unit)| {
-                        NonNegativeAmount::arbitrary_with(Some(unit.decimal_places)).prop_map(
-                            move |amount| Self {
-                                transaction,
-                                debit_account: debit_account.clone(),
-                                credit_account: credit_account.clone(),
-                                amount,
-                                unit: unit._name.clone(),
+                        .prop_map(
+                            |(transaction, debit_account, credit_account, (unit, amount))| {
+                                MoveAdded {
+                                    transaction,
+                                    debit_account,
+                                    credit_account,
+                                    amount,
+                                    unit,
+                                }
                             },
                         )
-                    })
-                    .boxed(),
-                ArbitraryMoveAddedParam::InvalidWith(observations) => {
-                    use ArbitraryMoveAddedParam::*;
-                    let strategy = Union::new([
-                        MoveAdded::arbitrary_with(InvalidBecause(
-                            MoveAddedInvalidities::TransactionNotFound(
-                                observations.transaction_recorded_events,
-                            ),
-                        )),
-                        MoveAdded::arbitrary_with(InvalidBecause(
-                            MoveAddedInvalidities::DebitAccountNotFound(
-                                observations.account_names.clone(),
-                            ),
-                        )),
-                        MoveAdded::arbitrary_with(InvalidBecause(
-                            MoveAddedInvalidities::CreditAccountNotFound(
-                                observations.account_names.clone(),
-                            ),
-                        )),
-                        MoveAdded::arbitrary_with(InvalidBecause(
-                            MoveAddedInvalidities::UnitNotFound(
-                                observations
-                                    .unit_created_events
-                                    .iter()
-                                    .map(|event| event.name.clone())
-                                    .collect(),
-                            ),
-                        )),
-                    ]);
-                    let strategy = if observations.unit_created_events.is_empty() {
-                        strategy
-                    } else {
-                        strategy.or(MoveAdded::arbitrary_with(InvalidBecause(
-                            MoveAddedInvalidities::MoveAddedDecimalPlacesMismatch(
-                                observations.unit_created_events,
-                            ),
-                        )))
-                    };
-                    strategy.boxed()
+                        .boxed()
                 }
             }
         }
@@ -554,6 +517,7 @@ mod test {
                     let strategy = if MoveAdded::move_added_possible(&observations) {
                         strategy.or(MoveAdded::arbitrary_with(ArbitraryMoveAddedParam::With(
                             observations,
+                            Default::default(),
                         ))
                         .prop_map(Event::MoveAdded)
                         .boxed())
