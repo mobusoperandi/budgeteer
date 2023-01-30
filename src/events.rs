@@ -305,72 +305,14 @@ mod test {
                     assert!(transaction_ids_length > 0);
                     assert!(account_names_length >= 2);
                     assert!(units_length >= 1);
-                    (
-                        any::<Index>(),
-                        any::<Index>(),
-                        any::<Index>(),
-                        any::<Index>(),
-                    )
-                        .prop_filter(
-                            "account names must be different",
-                            move |(
-                                _transaction_id_index,
-                                debit_account_name_index,
-                                credit_account_name_index,
-                                _unit_index,
-                            )| {
-                                debit_account_name_index.index(account_names_length)
-                                    != credit_account_name_index.index(account_names_length)
-                            },
-                        )
-                        .prop_flat_map(
-                            move |(
-                                transaction_id_index,
-                                debit_account_name_index,
-                                credit_account_name_index,
-                                unit_index,
-                            )| {
-                                let transaction_id = transaction::Id(
-                                    transaction_id_index
-                                        .index(transaction_ids_length.try_into().unwrap())
-                                        .try_into()
-                                        .unwrap(),
-                                );
-                                let debit_account_name = observations
-                                    .account_names
-                                    .iter()
-                                    .nth(debit_account_name_index.index(account_names_length))
-                                    .unwrap()
-                                    .clone();
-                                let credit_account_name = observations
-                                    .account_names
-                                    .iter()
-                                    .nth(credit_account_name_index.index(account_names_length))
-                                    .unwrap()
-                                    .clone();
-                                let unit_created_event = observations
-                                    .unit_created_events
-                                    .get(unit_index.index(units_length))
-                                    .unwrap()
-                                    .clone();
 
-                                // ToDo: setup invalidities here
-                                compile_error!();
-                                NonNegativeAmount::arbitrary_with(Some(
-                                    unit_created_event.decimal_places,
-                                ))
-                                .prop_map(move |amount| {
-                                    MoveAdded {
-                                        transaction: transaction_id,
-                                        debit_account: debit_account_name.clone(),
-                                        credit_account: credit_account_name.clone(),
-                                        amount,
-                                        unit: unit_created_event.name.clone(),
-                                    }
-                                })
-                            },
-                        )
-                        .boxed()
+                    let transaction_id_strategy = if invalidities.transaction_not_found {
+                        (transaction_ids_length..).boxed()
+                    } else {
+                        (0..transaction_ids_length).boxed()
+                    }
+                    .prop_map(transaction::Id);
+                    todo!()
                 }
                 ArbitraryMoveAddedParam::WithTransactionIdAbove(count) => (
                     (count..=u64::MAX).prop_map(transaction::Id),
