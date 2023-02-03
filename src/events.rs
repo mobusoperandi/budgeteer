@@ -585,10 +585,10 @@ mod test {
                     let strategy = Union::new([MoveAddedInvalidities::arbitrary_with(
                         ArbitraryMoveAddedInvaliditiesParam::Invalid,
                     )
-                    .prop_map(|invalidities| {
+                    .prop_flat_map(|some_invalidities| {
                         MoveAdded::arbitrary_with(ArbitraryMoveAddedParam::With(
                             observations.clone(),
-                            invalidities,
+                            some_invalidities,
                         ))
                     })
                     .prop_map(Event::MoveAdded)
