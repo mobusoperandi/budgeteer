@@ -289,7 +289,7 @@ mod test {
             match arg {
                 ArbitraryMoveAddedInvaliditiesParam::Valid => Just(Self::default()).boxed(),
                 ArbitraryMoveAddedInvaliditiesParam::Invalid => {
-                    (&any::<bool>(), &any::<bool>(), &any::<bool>())
+                    (any::<bool>(), any::<bool>(), any::<bool>())
                         .prop_flat_map(
                             |(
                                 transaction_not_found,
@@ -301,7 +301,7 @@ mod test {
                                     || credit_account_not_found
                                 {
                                     any::<Option<UnitRelatedInvalidMoveAddedReason>>()
-                                        .prop_map(|unit_related| MoveAddedInvalidities {
+                                        .prop_map(move |unit_related| MoveAddedInvalidities {
                                             transaction_not_found,
                                             debit_account_not_found,
                                             credit_account_not_found,
@@ -310,7 +310,7 @@ mod test {
                                         .boxed()
                                 } else {
                                     any::<UnitRelatedInvalidMoveAddedReason>()
-                                        .prop_map(|unit_related| MoveAddedInvalidities {
+                                        .prop_map(move |unit_related| MoveAddedInvalidities {
                                             transaction_not_found,
                                             debit_account_not_found,
                                             credit_account_not_found,
@@ -372,15 +372,18 @@ mod test {
                     .prop_map(transaction::Id);
                     let debit_account_strategy = if invalidities.debit_account_not_found {
                         any::<account::Name>()
-                            .prop_filter("debit account name happens to be valid", |name| {
+                            .prop_filter("debit account name happens to be valid", move |name| {
                                 !observations.account_names.contains(name)
                             })
                             .boxed()
                     } else {
                         select(observations.account_names.into_iter().collect_vec()).boxed()
                     };
-                    let credit_account_strategy =
-                        (&debit_account_strategy, &debit_account_strategy.clone()).prop_filter_map(
+                    let credit_account_strategy = (
+                        debit_account_strategy.clone(),
+                        debit_account_strategy.clone(),
+                    )
+                        .prop_filter_map(
                             "debit and credit account names identical",
                             |(debit, credit)| (debit != credit).then_some(credit),
                         );
@@ -389,7 +392,7 @@ mod test {
                             (any::<unit::Name>(), any::<NonNegativeAmount>())
                                 .prop_filter(
                                     "unit name happens to be valid",
-                                    |(unit_name, _amount)| {
+                                    move |(unit_name, _amount)| {
                                         !observations.unit_created_events.iter().any(
                                             |unit_created_event| {
                                                 unit_name == &unit_created_event.name
@@ -582,12 +585,13 @@ mod test {
                 ArbitraryEventParam::InvalidAfter(events) => {
                     let observations: Observations = events.iter().collect();
                     // TODO: refactor "let mut strategy"
+                    let observations_clone = observations.clone();
                     let strategy = Union::new([MoveAddedInvalidities::arbitrary_with(
                         ArbitraryMoveAddedInvaliditiesParam::Invalid,
                     )
-                    .prop_flat_map(|some_invalidities| {
+                    .prop_flat_map(move |some_invalidities| {
                         MoveAdded::arbitrary_with(ArbitraryMoveAddedParam::With(
-                            observations.clone(),
+                            observations_clone.clone(),
                             some_invalidities,
                         ))
                     })
@@ -789,6 +793,7 @@ mod test {
             .unwrap();
     }
 
+    // TODO instead of the following three or four tests, use the power of property based testing
     #[test]
     fn event_validate_for_appending_to_account_created_name_collision() {
         let mut runner = TestRunner::default();
@@ -895,13 +900,6 @@ mod test {
             })
             .unwrap();
     }
-
-    // TODO the rest of the failures
-    // MoveAddedTransactionNotFound(transaction::Id),
-    // MoveAddedDebitAccountNotFound(account::Name),
-    // MoveAddedCreditAccountNotFound(account::Name),
-    // MoveAddedUnitNotFound(unit::Name),
-    // MoveAddedDecimalPlacesMismatch { unit_scale: u8, amount_scale: u32 },
 
     #[test]
     fn event_validate_for_appending_to_success() {
