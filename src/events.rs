@@ -863,10 +863,14 @@ mod test {
             .unwrap();
     }
 
-    // TODO instead of the following three or four tests, use the power of property based testing
+    // TODO instead of the following test or two, use the power of property based testing
     #[test]
-    fn event_validate_for_appending_to_failure() {
+    fn event_validate_for_appending_to_move_added() {
         let mut runner = TestRunner::default();
+        let invalidities_strategy = any::<MoveAddedInvalidities>();
+        let events_strategy = invalidities_strategy.prop_flat_map(|invalidities| {
+            Events::arbitrary_with(ArbitraryEventsParam::ForInvalidities(invalidities))
+        });
     }
 
     #[test]
