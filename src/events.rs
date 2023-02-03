@@ -266,10 +266,19 @@ mod test {
     }
 
     impl MoveAdded {
-        fn move_added_possible(observations: &Observations) -> bool {
+        fn is_possible(observations: &Observations) -> bool {
             observations.transaction_recorded_events > 0
                 && (observations.account_names.len() >= 2)
                 && !observations.unit_created_events.is_empty()
+        }
+    }
+
+    impl Arbitrary for MoveAddedInvalidities {
+        type Parameters = ;
+        type Strategy = BoxedStrategy<Self>;
+
+        fn arbitrary_with(args: Self::Parameters) -> Self::Strategy {
+            todo!()
         }
     }
 
@@ -514,7 +523,7 @@ mod test {
                         .prop_map(Event::UnitCreated)
                         .boxed(),
                     ]);
-                    let strategy = if MoveAdded::move_added_possible(&observations) {
+                    let strategy = if MoveAdded::is_possible(&observations) {
                         strategy.or(MoveAdded::arbitrary_with(ArbitraryMoveAddedParam::With(
                             observations,
                             Default::default(),
