@@ -813,10 +813,8 @@ mod test {
 
                 assert_eq!(
                     error,
-                    EventValidateForAppendingToErrorSet::single(
-                        EventValidateForAppendingToError::AccountCreatedNameCollision(
-                            account_created.name
-                        )
+                    EventValidateForAppendingToError::AccountCreatedNameCollision(
+                        account_created.name
                     )
                 );
 
@@ -853,11 +851,7 @@ mod test {
 
                 assert_eq!(
                     error,
-                    EventValidateForAppendingToErrorSet::single(
-                        EventValidateForAppendingToError::UnitCreatedNameCollision(
-                            unit_created.name
-                        )
-                    )
+                    EventValidateForAppendingToError::UnitCreatedNameCollision(unit_created.name)
                 );
 
                 Ok(())
@@ -887,10 +881,13 @@ mod test {
 
                 assert_eq!(
                     error,
-                    EventValidateForAppendingToErrorSet::single(
-                        EventValidateForAppendingToError::MoveAddedTransactionNotFound(
-                            move_added.transaction
-                        )
+                    EventValidateForAppendingToError::MoveAdded(
+                        EventValidateForAppendingToErrorMoveAdded {
+                            transaction_not_found: Some(move_added.transaction),
+                            debit_account_not_found: None,
+                            credit_account_not_found: None,
+                            unit: None
+                        }
                     )
                 );
 
