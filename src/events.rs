@@ -287,7 +287,32 @@ mod test {
         fn arbitrary_with(arg: Self::Parameters) -> Self::Strategy {
             match arg {
                 ArbitraryMoveAddedInvaliditiesParam::Valid => Just(Self::default()).boxed(),
-                ArbitraryMoveAddedInvaliditiesParam::Invalid => todo!(),
+                ArbitraryMoveAddedInvaliditiesParam::Invalid => {
+                    (&any::<bool>(), &any::<bool>(), &any::<bool>())
+                        .prop_flat_map(
+                            |(
+                                transaction_not_found,
+                                debit_account_not_found,
+                                credit_account_not_found,
+                            )| {
+                                if transaction_not_found
+                                    || debit_account_not_found
+                                    || credit_account_not_found
+                                {
+                                    any::<Option<UnitRelatedInvalidMoveAddedReason>>().prop_map(
+                                        |unit_related| MoveAddedInvalidities {
+                                            transaction_not_found,
+                                            debit_account_not_found,
+                                            credit_account_not_found,
+                                            unit_related,
+                                        },
+                                    )
+                                } else {
+                                }
+                            },
+                        )
+                        .boxed()
+                }
             }
         }
     }
