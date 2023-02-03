@@ -538,15 +538,17 @@ mod test {
                 ArbitraryEventParam::InvalidAfter(events) => {
                     let observations: Observations = events.iter().collect();
                     // TODO: refactor "let mut strategy"
-                    let strategy = Union::new([any::<MoveAddedInvalidities>()
-                        .prop_map(|invalidities| {
-                            MoveAdded::arbitrary_with(ArbitraryMoveAddedParam::With(
-                                observations.clone(),
-                                invalidities,
-                            ))
-                        })
-                        .prop_map(Event::MoveAdded)
-                        .boxed()]);
+                    let strategy = Union::new([MoveAddedInvalidities::arbitrary_with(
+                        ArbitraryMoveAddedInvaliditiesParam::Invalid,
+                    )
+                    .prop_map(|invalidities| {
+                        MoveAdded::arbitrary_with(ArbitraryMoveAddedParam::With(
+                            observations.clone(),
+                            invalidities,
+                        ))
+                    })
+                    .prop_map(Event::MoveAdded)
+                    .boxed()]);
 
                     let strategy = if !observations.account_names.is_empty() {
                         strategy.or(AccountCreated::arbitrary_with(
