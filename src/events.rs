@@ -274,7 +274,7 @@ mod test {
     }
 
     impl Arbitrary for MoveAddedInvalidities {
-        type Parameters = ;
+        type Parameters = ();
         type Strategy = BoxedStrategy<Self>;
 
         fn arbitrary_with(args: Self::Parameters) -> Self::Strategy {
