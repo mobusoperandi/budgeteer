@@ -185,6 +185,7 @@ mod test {
         strategy::Union,
         test_runner::TestRunner,
     };
+    use proptest_derive::Arbitrary;
 
     #[derive(Debug, Default, Clone)]
     pub(crate) struct Observations {
@@ -299,15 +300,23 @@ mod test {
                                     || debit_account_not_found
                                     || credit_account_not_found
                                 {
-                                    any::<Option<UnitRelatedInvalidMoveAddedReason>>().prop_map(
-                                        |unit_related| MoveAddedInvalidities {
+                                    any::<Option<UnitRelatedInvalidMoveAddedReason>>()
+                                        .prop_map(|unit_related| MoveAddedInvalidities {
                                             transaction_not_found,
                                             debit_account_not_found,
                                             credit_account_not_found,
                                             unit_related,
-                                        },
-                                    )
+                                        })
+                                        .boxed()
                                 } else {
+                                    any::<UnitRelatedInvalidMoveAddedReason>()
+                                        .prop_map(|unit_related| MoveAddedInvalidities {
+                                            transaction_not_found,
+                                            debit_account_not_found,
+                                            credit_account_not_found,
+                                            unit_related: Some(unit_related),
+                                        })
+                                        .boxed()
                                 }
                             },
                         )
@@ -444,7 +453,7 @@ mod test {
         unit_related: Option<UnitRelatedInvalidMoveAddedReason>,
     }
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Arbitrary)]
     pub(crate) enum UnitRelatedInvalidMoveAddedReason {
         UnitNotFound,
         DecimalPlacesMismatch,
