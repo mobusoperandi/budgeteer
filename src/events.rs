@@ -169,7 +169,7 @@ impl Event {
 
 #[cfg(test)]
 mod test {
-    use std::{collections::BTreeSet, io, default};
+    use std::{collections::BTreeSet, default, io};
 
     use crate::{
         entities::{account, amount::Amount, transaction, unit::Unit},
@@ -272,12 +272,12 @@ mod test {
                 && !observations.unit_created_events.is_empty()
         }
     }
-    
+
     #[derive(Default)]
     enum ArbitraryMoveAddedInvaliditiesParam {
         #[default]
         Valid,
-        Invalid
+        Invalid,
     }
 
     impl Arbitrary for MoveAddedInvalidities {
@@ -286,7 +286,7 @@ mod test {
 
         fn arbitrary_with(arg: Self::Parameters) -> Self::Strategy {
             match arg {
-                ArbitraryMoveAddedInvaliditiesParam::Valid => todo!(),
+                ArbitraryMoveAddedInvaliditiesParam::Valid => Just(Self::default()).boxed(),
                 ArbitraryMoveAddedInvaliditiesParam::Invalid => todo!(),
             }
         }
