@@ -169,10 +169,10 @@ impl Event {
 
 #[cfg(test)]
 mod test {
-    use std::{collections::BTreeSet, default, io};
+    use std::{collections::BTreeSet, io};
 
     use crate::{
-        entities::{account, amount::Amount, transaction, unit::Unit},
+        entities::{account, transaction, unit::Unit},
         error::Error,
         events::AccountCreated,
     };
@@ -275,7 +275,7 @@ mod test {
     }
 
     #[derive(Default)]
-    enum ArbitraryMoveAddedInvaliditiesParam {
+    pub(crate) enum ArbitraryMoveAddedInvaliditiesParam {
         #[default]
         Valid,
         Invalid,
@@ -793,7 +793,6 @@ mod test {
             .unwrap();
     }
 
-    // TODO instead of the following three or four tests, use the power of property based testing
     #[test]
     fn event_validate_for_appending_to_account_created_name_collision() {
         let mut runner = TestRunner::default();
@@ -862,6 +861,12 @@ mod test {
                 Ok(())
             })
             .unwrap();
+    }
+
+    // TODO instead of the following three or four tests, use the power of property based testing
+    #[test]
+    fn event_validate_for_appending_to_failure() {
+        let mut runner = TestRunner::default();
     }
 
     #[test]
