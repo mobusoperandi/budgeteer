@@ -306,9 +306,18 @@ mod test {
                             })
                             .boxed()
                     }
-                    while minimum_account_created > events.iter().filter(|&event| matches!(event, Event::AccountCreated(_))).count() {
-                        events_strategy = (Just(events), )
+                    let account_created_count = events
+                            .iter()
+                            .filter(|&event| matches!(event, Event::AccountCreated(_)))
+                            .count();
+                    let n_account_created_short = minimum_account_created.saturating_sub(account_created_count);
+                    
+                    
+                    while minimum_account_created
+                        >                     {
+                        events_strategy = (Just(events),)
                     }
+
                     events_strategy
                 })
                 .boxed()
