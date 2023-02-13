@@ -286,19 +286,30 @@ mod test {
                     recurse(length, Just(Events::default()).boxed())
                 })
                 .prop_flat_map(|events| {
+                    let events_strategy = Just(events.clone()).boxed();
                     let ArbitraryEventsParam {
                         has_transaction_recorded,
                         minimum_account_created,
                         has_unit_created,
                     } = arg;
-                    if has_transaction_recorded {
-                        if !events
+                    if has_transaction_recorded
+                        && !events
                             .iter()
                             .any(|event| matches!(event, Event::TransactionRecorded(_)))
-                        {
-                            events = (any::<TransactionRecorded>(), Just(events)).prop_map(|(transaction_recorded, events)| events.)
-                        }
+                    {
+                        events_strategy = (Just(events), any::<TransactionRecorded>())
+                            .prop_map(|(events, transaction_recorded)| {
+                                events
+                                    .0
+                                    .push(Event::TransactionRecorded(transaction_recorded));
+                                events
+                            })
+                            .boxed()
                     }
+                    while minimum_account_created > events.iter().filter(|&event| matches!(event, Event::AccountCreated(_))).count() {
+                        events_strategy = (Just(events), )
+                    }
+                    events_strategy
                 })
                 .boxed()
         }
