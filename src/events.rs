@@ -296,7 +296,7 @@ mod test {
                             .iter()
                             .any(|event| matches!(event, Event::TransactionRecorded(_)))
                         {
-                            events = 
+                            events = (any::<TransactionRecorded>(), Just(events)).prop_map(|(transaction_recorded, events)|)
                         }
                     }
                 })
