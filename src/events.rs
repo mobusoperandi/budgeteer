@@ -225,7 +225,12 @@ mod test {
         InvalidAfter(Events),
     }
 
-    struct ArbitraryEventsParam {}
+    #[derive(Default)]
+    pub(crate) struct ArbitraryEventsParam {
+        has_transaction_recorded: bool,
+        minimum_account_created: usize,
+        has_unit_created: bool
+    }
 
     impl From<MoveAddedInvalidities> for ArbitraryEventsParam {
         fn from(value: MoveAddedInvalidities) -> Self {
