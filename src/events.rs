@@ -225,9 +225,17 @@ mod test {
         InvalidAfter(Events),
     }
 
+    struct ArbitraryEventsParam {}
+
+    impl From<MoveAddedInvalidities> for ArbitraryEventsParam {
+        fn from(value: MoveAddedInvalidities) -> Self {
+            MoveAddedInvalidities
+        }
+    }
+
     impl Arbitrary for Events {
         type Strategy = BoxedStrategy<Self>;
-        type Parameters = MoveAddedInvalidities;
+        type Parameters = ArbitraryEventsParam;
 
         fn arbitrary_with(for_move_added_invalidities: Self::Parameters) -> Self::Strategy {
             (0usize..=20)
