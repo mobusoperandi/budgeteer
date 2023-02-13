@@ -243,9 +243,12 @@ mod test {
         ) -> Self {
             Self {
                 has_transaction_recorded: !transaction_not_found,
-                minimum_account_created: (!debit_account_not_found).into()
-                    + (!credit_account_not_found).into(),
-                has_unit_created: ,
+                minimum_account_created: usize::from(!debit_account_not_found)
+                    + usize::from(!credit_account_not_found),
+                has_unit_created: matches!(
+                    unit_related,
+                    None | Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch)
+                ),
             }
         }
     }
@@ -254,7 +257,7 @@ mod test {
         type Strategy = BoxedStrategy<Self>;
         type Parameters = ArbitraryEventsParam;
 
-        fn arbitrary_with(for_move_added_invalidities: Self::Parameters) -> Self::Strategy {
+        fn arbitrary_with(arg: Self::Parameters) -> Self::Strategy {
             (0usize..=20)
                 .prop_flat_map(|length| {
                     fn recurse(
