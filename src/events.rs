@@ -229,12 +229,24 @@ mod test {
     pub(crate) struct ArbitraryEventsParam {
         has_transaction_recorded: bool,
         minimum_account_created: usize,
-        has_unit_created: bool
+        has_unit_created: bool,
     }
 
     impl From<MoveAddedInvalidities> for ArbitraryEventsParam {
-        fn from(value: MoveAddedInvalidities) -> Self {
-            MoveAddedInvalidities
+        fn from(
+            MoveAddedInvalidities {
+                transaction_not_found,
+                debit_account_not_found,
+                credit_account_not_found,
+                unit_related,
+            }: MoveAddedInvalidities,
+        ) -> Self {
+            Self {
+                has_transaction_recorded: !transaction_not_found,
+                minimum_account_created: (!debit_account_not_found).into()
+                    + (!credit_account_not_found).into(),
+                has_unit_created: ,
+            }
         }
     }
 
