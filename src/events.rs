@@ -285,6 +285,21 @@ mod test {
                     }
                     recurse(length, Just(Events::default()).boxed())
                 })
+                .prop_flat_map(|events| {
+                    let ArbitraryEventsParam {
+                        has_transaction_recorded,
+                        minimum_account_created,
+                        has_unit_created,
+                    } = arg;
+                    if has_transaction_recorded {
+                        if !events
+                            .iter()
+                            .any(|event| matches!(event, Event::TransactionRecorded(_)))
+                        {
+                            events = 
+                        }
+                    }
+                })
                 .boxed()
         }
     }
