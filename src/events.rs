@@ -297,7 +297,7 @@ mod test {
                             .iter()
                             .any(|event| matches!(event, Event::TransactionRecorded(_)))
                     {
-                        events_strategy = (Just(events), any::<TransactionRecorded>())
+                        events_strategy = (events_strategy, any::<TransactionRecorded>())
                             .prop_map(|(events, transaction_recorded)| {
                                 events
                                     .0
@@ -313,11 +313,13 @@ mod test {
                             
                     let n_account_created_short = minimum_account_created.saturating_sub(account_created_count);
                     
-                    
-                    while minimum_account_created
-                        >                     {
-                        events_strategy = (Just(events),)
-                    }
+                    let observations: Observations = events.iter().collect();
+                    (0..n_account_created_short).for_each(|_| {
+                        events_strategy = (events_strategy, AccountCreated::arbitrary_with(ArbitraryAccountCreatedParam::With(observations.account_names))).prop_map(|(events, account_created)| {
+                            events.push(Event::AccountCreated(account_created));
+                            events
+                        })
+                    }) 
 
                     events_strategy
                 })
