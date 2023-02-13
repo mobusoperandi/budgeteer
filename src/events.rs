@@ -273,10 +273,12 @@ mod test {
                                     Just(events.clone()),
                                     Event::arbitrary_with(ArbitraryEventParam::ValidAfter(events)),
                                 )
-                                    .prop_flat_map(|(mut events, event)| {
-                                        events.0.push(event);
-                                        Just(events)
-                                    });
+                                    .prop_map(
+                                        |(mut events, event)| {
+                                            events.0.push(event);
+                                            events
+                                        },
+                                    );
                                 recurse(length, events_strategy.boxed())
                             })
                             .boxed()
