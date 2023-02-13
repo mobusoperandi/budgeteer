@@ -229,7 +229,7 @@ mod test {
         type Strategy = BoxedStrategy<Self>;
         type Parameters = MoveAddedInvalidities;
 
-        fn arbitrary_with(arg: Self::Parameters) -> Self::Strategy {
+        fn arbitrary_with(for_move_added_invalidities: Self::Parameters) -> Self::Strategy {
             (0usize..=20)
                 .prop_flat_map(|length| {
                     fn recurse(
@@ -863,16 +863,15 @@ mod test {
             .unwrap();
     }
 
-    // TODO instead of the following test or two, use the power of property based testing
     #[test]
     fn event_validate_for_appending_to_move_added() {
         let mut runner = TestRunner::default();
         let invalidities_strategy = any::<MoveAddedInvalidities>();
-        let events_strategy = invalidities_strategy.prop_flat_map(|invalidities| {
-            Events::arbitrary_with(invalidities)
-        });
+        let events_strategy = invalidities_strategy
+            .prop_flat_map(|invalidities| Events::arbitrary_with(invalidities));
     }
 
+    // TODO instead of the following test or two, use the power of property based testing
     #[test]
     fn event_validate_for_appending_to_move_added_transaction_not_found() {
         let mut runner = TestRunner::default();
