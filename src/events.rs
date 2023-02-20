@@ -235,9 +235,9 @@ mod test {
 
     #[derive(Default)]
     pub(crate) struct ArbitraryEventsParam {
-        has_transaction_recorded: bool,
+        must_have_transaction_recorded: bool,
         minimum_account_created: usize,
-        has_unit_created: bool,
+        must_have_unit_created: bool,
     }
 
     impl From<MoveAddedInvalidities> for ArbitraryEventsParam {
@@ -250,10 +250,10 @@ mod test {
             }: MoveAddedInvalidities,
         ) -> Self {
             Self {
-                has_transaction_recorded: !transaction_not_found,
+                must_have_transaction_recorded: !transaction_not_found,
                 minimum_account_created: usize::from(!debit_account_not_found)
                     + usize::from(!credit_account_not_found),
-                has_unit_created: matches!(
+                must_have_unit_created: matches!(
                     unit_related,
                     None | Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch)
                 ),
@@ -296,9 +296,9 @@ mod test {
                 .prop_flat_map(move |events| {
                     let mut events_strategy = Just(events.clone()).boxed();
                     let ArbitraryEventsParam {
-                        has_transaction_recorded,
+                        must_have_transaction_recorded: has_transaction_recorded,
                         minimum_account_created,
-                        has_unit_created,
+                        must_have_unit_created: has_unit_created,
                     } = arg;
                     if has_transaction_recorded
                         && !events
@@ -974,6 +974,9 @@ mod test {
         let invalidities_strategy = any::<MoveAddedInvalidities>();
         let events_strategy = invalidities_strategy
             .prop_flat_map(|invalidities| Events::arbitrary_with(invalidities.into()));
+        let event_strategy = (invalidities_strategy, events_strategy).prop_flat_map(|(invalidities, events)| {
+
+        });
     }
 
     // TODO instead of the following test or two, use the power of property based testing
