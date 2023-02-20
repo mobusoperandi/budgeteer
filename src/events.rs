@@ -319,7 +319,7 @@ mod test {
                             events.push(Event::AccountCreated(account_created));
                             events
                         })
-                    }) 
+                    })
 
                     events_strategy
                 })
