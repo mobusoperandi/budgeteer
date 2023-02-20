@@ -285,7 +285,7 @@ mod test {
                     }
                     recurse(length, Just(Events::default()).boxed())
                 })
-                .prop_flat_map(|events| {
+                .prop_flat_map(move |events| {
                     let mut events_strategy = Just(events.clone()).boxed();
                     let ArbitraryEventsParam {
                         has_transaction_recorded,
@@ -325,16 +325,16 @@ mod test {
                             return events_strategy;
                         }
 
-                        let observations: Observations = events.iter().collect();
+                        let events_strategy = events_strategy
+                            .prop_flat_map(|events| {
+                                let observations: Observations = events.iter().collect();
 
-                        let events_strategy = 
-                            events_strategy.prop_flat_map(|events| {
+                                let account_created_strategy = AccountCreated::arbitrary_with(
+                                    ArbitraryAccountCreatedParam::With(observations.account_names),
+                                );
 
-                            }),
-                            AccountCreated::arbitrary_with(ArbitraryAccountCreatedParam::With(
-                                observations.account_names.clone(),
-                            )),
-                        )
+                                (Just(events), account_created_strategy)
+                            })
                             .prop_map(|(mut events, account_created)| {
                                 events.0.push(Event::AccountCreated(account_created));
                                 events
