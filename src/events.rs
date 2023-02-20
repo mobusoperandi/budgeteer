@@ -314,12 +314,23 @@ mod test {
                     let n_account_created_short =
                         minimum_account_created.saturating_sub(account_created_count);
 
-                    let observations: Observations = events.iter().collect();
-                    let events_strategy_clone = events_strategy.clone();
+                    let events_strategy =
+                        add_account_created_events(n_account_created_short, events_strategy);
 
-                    (0..n_account_created_short).for_each(move |_| {
-                        events_strategy = (
-                            events_strategy_clone.clone(),
+                    fn add_account_created_events(
+                        this_many: usize,
+                        events_strategy: BoxedStrategy<Events>,
+                    ) -> BoxedStrategy<Events> {
+                        if this_many == 0 {
+                            return events_strategy;
+                        }
+
+                        let observations: Observations = events.iter().collect();
+
+                        let events_strategy = 
+                            events_strategy.prop_flat_map(|events| {
+
+                            }),
                             AccountCreated::arbitrary_with(ArbitraryAccountCreatedParam::With(
                                 observations.account_names.clone(),
                             )),
@@ -329,7 +340,9 @@ mod test {
                                 events
                             })
                             .boxed();
-                    });
+
+                        add_account_created_events(this_many - 1, events_strategy)
+                    }
 
                     events_strategy
                 })
