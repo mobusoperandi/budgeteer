@@ -193,6 +193,14 @@ mod test {
         transaction_recorded_events: u64,
         unit_created_events: Vec<UnitCreated>,
     }
+    impl Observations {
+        pub(crate) fn unit_names(&self) -> BTreeSet<unit::Name> {
+            self.unit_created_events
+                .iter()
+                .map(|unit_created| unit_created.name.clone())
+                .collect()
+        }
+    }
 
     impl<'a> FromIterator<&'a Event> for Observations {
         fn from_iter<T: IntoIterator<Item = &'a Event>>(iter: T) -> Self {
@@ -314,7 +322,7 @@ mod test {
                     let n_account_created_short =
                         minimum_account_created.saturating_sub(account_created_count);
 
-                    let events_strategy =
+                    events_strategy =
                         add_account_created_events(n_account_created_short, events_strategy);
 
                     fn add_account_created_events(
@@ -342,6 +350,26 @@ mod test {
                             .boxed();
 
                         add_account_created_events(this_many - 1, events_strategy)
+                    }
+
+                    let observations: Observations = events.iter().collect();
+
+                    if has_unit_created
+                        && !events
+                            .iter()
+                            .any(|event| matches!(event, Event::UnitCreated(_)))
+                    {
+                        events_strategy = (
+                            events_strategy,
+                            UnitCreated::arbitrary_with(ArbitraryUnitCreatedParam::With(
+                                observations.unit_names(),
+                            )),
+                        )
+                            .prop_map(|(mut events, unit_created)| {
+                                events.0.push(Event::UnitCreated(unit_created));
+                                events
+                            })
+                            .boxed()
                     }
 
                     events_strategy
