@@ -286,7 +286,7 @@ mod test {
                     recurse(length, Just(Events::default()).boxed())
                 })
                 .prop_flat_map(|events| {
-                    let events_strategy = Just(events.clone()).boxed();
+                    let mut events_strategy = Just(events.clone()).boxed();
                     let ArbitraryEventsParam {
                         has_transaction_recorded,
                         minimum_account_created,
@@ -298,7 +298,7 @@ mod test {
                             .any(|event| matches!(event, Event::TransactionRecorded(_)))
                     {
                         events_strategy = (events_strategy, any::<TransactionRecorded>())
-                            .prop_map(|(events, transaction_recorded)| {
+                            .prop_map(|(mut events, transaction_recorded)| {
                                 events
                                     .0
                                     .push(Event::TransactionRecorded(transaction_recorded));
@@ -315,14 +315,16 @@ mod test {
                         minimum_account_created.saturating_sub(account_created_count);
 
                     let observations: Observations = events.iter().collect();
-                    (0..n_account_created_short).for_each(|_| {
+                    let events_strategy_clone = events_strategy.clone();
+
+                    (0..n_account_created_short).for_each(move |_| {
                         events_strategy = (
-                            events_strategy,
+                            events_strategy_clone.clone(),
                             AccountCreated::arbitrary_with(ArbitraryAccountCreatedParam::With(
-                                observations.account_names,
+                                observations.account_names.clone(),
                             )),
                         )
-                            .prop_map(|(events, account_created)| {
+                            .prop_map(|(mut events, account_created)| {
                                 events.0.push(Event::AccountCreated(account_created));
                                 events
                             })
