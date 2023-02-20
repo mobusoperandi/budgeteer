@@ -974,9 +974,16 @@ mod test {
         let invalidities_strategy = any::<MoveAddedInvalidities>();
         let events_strategy = invalidities_strategy
             .prop_flat_map(|invalidities| Events::arbitrary_with(invalidities.into()));
-        let event_strategy = (invalidities_strategy, events_strategy).prop_flat_map(|(invalidities, events)| {
-
-        });
+        let event_strategy =
+            (invalidities_strategy, events_strategy, any::<Index>()).prop_flat_map(|(invalidities, events, transaction_index)| {
+                let move_added = MoveAdded {
+                    transaction: invalidities.,
+                    debit_account: todo!(),
+                    credit_account: todo!(),
+                    amount: todo!(),
+                    unit: todo!(),
+                }
+            });
     }
 
     // TODO instead of the following test or two, use the power of property based testing
