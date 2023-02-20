@@ -680,11 +680,7 @@ mod test {
                             .prop_map(Event::TransactionRecorded)
                             .boxed(),
                         UnitCreated::arbitrary_with(ArbitraryUnitCreatedParam::With(
-                            observations
-                                .unit_created_events
-                                .iter()
-                                .map(|unit_created| unit_created.name.clone())
-                                .collect(),
+                            observations.unit_names(),
                         ))
                         .prop_map(Event::UnitCreated)
                         .boxed(),
@@ -731,13 +727,7 @@ mod test {
 
                     let strategy = if !observations.unit_created_events.is_empty() {
                         strategy.or(UnitCreated::arbitrary_with(
-                            ArbitraryUnitCreatedParam::InvalidWith(
-                                observations
-                                    .unit_created_events
-                                    .into_iter()
-                                    .map(|unit_created| unit_created.name)
-                                    .collect(),
-                            ),
+                            ArbitraryUnitCreatedParam::InvalidWith(observations.unit_names()),
                         )
                         .prop_map(Event::UnitCreated)
                         .boxed())
@@ -957,11 +947,7 @@ mod test {
             })
             .prop_flat_map(|events| {
                 let observations: Observations = events.iter().collect();
-                let unit_names = observations
-                    .unit_created_events
-                    .into_iter()
-                    .map(|event| event.name)
-                    .collect();
+                let unit_names = observations.unit_names();
                 let unit_created =
                     UnitCreated::arbitrary_with(ArbitraryUnitCreatedParam::InvalidWith(unit_names));
                 (Just(events), unit_created)
