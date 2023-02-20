@@ -307,19 +307,27 @@ mod test {
                             .boxed()
                     }
                     let account_created_count = events
-                            .iter()
-                            .filter(|&event| matches!(event, Event::AccountCreated(_)))
-                            .count();
-                            
-                    let n_account_created_short = minimum_account_created.saturating_sub(account_created_count);
-                    
+                        .iter()
+                        .filter(|&event| matches!(event, Event::AccountCreated(_)))
+                        .count();
+
+                    let n_account_created_short =
+                        minimum_account_created.saturating_sub(account_created_count);
+
                     let observations: Observations = events.iter().collect();
                     (0..n_account_created_short).for_each(|_| {
-                        events_strategy = (events_strategy, AccountCreated::arbitrary_with(ArbitraryAccountCreatedParam::With(observations.account_names))).prop_map(|(events, account_created)| {
-                            events.push(Event::AccountCreated(account_created));
-                            events
-                        })
-                    })
+                        events_strategy = (
+                            events_strategy,
+                            AccountCreated::arbitrary_with(ArbitraryAccountCreatedParam::With(
+                                observations.account_names,
+                            )),
+                        )
+                            .prop_map(|(events, account_created)| {
+                                events.0.push(Event::AccountCreated(account_created));
+                                events
+                            })
+                            .boxed();
+                    });
 
                     events_strategy
                 })
@@ -936,7 +944,7 @@ mod test {
         let mut runner = TestRunner::default();
         let invalidities_strategy = any::<MoveAddedInvalidities>();
         let events_strategy = invalidities_strategy
-            .prop_flat_map(|invalidities| Events::arbitrary_with(invalidities));
+            .prop_flat_map(|invalidities| Events::arbitrary_with(invalidities.into()));
     }
 
     // TODO instead of the following test or two, use the power of property based testing
