@@ -985,27 +985,55 @@ mod test {
                 } else {
                     let maximum_transaction_id = observations.transaction_recorded_events;
                     0..maximum_transaction_id
-                }.prop_map(transaction::Id);
+                }
+                .prop_map(transaction::Id);
 
                 let debit_account_strategy = if invalidities.debit_account_not_found {
-                    any::<account::Name>().prop_filter("existing name", |name| !observations.account_names.contains(name)).boxed()
+                    any::<account::Name>()
+                        .prop_filter("existing name", |name| {
+                            !observations.account_names.contains(name)
+                        })
+                        .boxed()
                 } else {
                     select(&account_names).boxed()
                 };
 
-                let credit_account_strategy = debit_account_strategy.clone().prop_flat_map(|debit_account| if invalidities.debit_account_not_found {
-                    any::<account::Name>().prop_filter("existing name", |name| !observations.account_names.contains(name)).boxed()
-                } else {
-                    select(&account_names).boxed()
-                }.prop_filter("same account names", |credit_account| &debit_account != credit_account));
+                let credit_account_strategy =
+                    debit_account_strategy
+                        .clone()
+                        .prop_flat_map(|debit_account| {
+                            if invalidities.debit_account_not_found {
+                                any::<account::Name>()
+                                    .prop_filter("existing account name", |name| {
+                                        !observations.account_names.contains(name)
+                                    })
+                                    .boxed()
+                            } else {
+                                select(&account_names).boxed()
+                            }
+                            .prop_filter("same account names", |credit_account| {
+                                &debit_account != credit_account
+                            })
+                        });
 
-                let move_added = MoveAdded {
-                    transaction,
-                    debit_account: todo!(),
-                    credit_account: todo!(),
-                    amount: todo!(),
-                    unit: todo!(),
-                }
+                let unit_strategy = match invalidities.unit_related {
+                    Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch) | None => {
+                        select(&account_names).boxed()
+                    }
+                    Some(UnitRelatedInvalidMoveAddedReason::UnitNotFound) => any::<unit::Unit>()
+                        .prop_filter("existing unit name", |name| {
+                            !observations.unit_names().contains(name)
+                        })
+                        .boxed(),
+                };
+
+                // let move_added = MoveAdded {
+                //     transaction,
+                //     debit_account: todo!(),
+                //     credit_account: todo!(),
+                //     amount: todo!(),
+                //     unit: todo!(),
+                // };
             });
     }
 
