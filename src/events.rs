@@ -975,16 +975,22 @@ mod test {
         let events_strategy = invalidities_strategy
             .prop_flat_map(|invalidities| Events::arbitrary_with(invalidities.into()));
         let event_strategy =
-            (invalidities_strategy, events_strategy, any::<Index>()).prop_flat_map(|(invalidities, events, transaction_index)| {
+            (invalidities_strategy, events_strategy).prop_flat_map(|(invalidities, events)| {
                 let observations: Observations = events.iter().collect();
 
-                let transaction = if invalidities.transaction_not_found {
+                let transaction_strategy = if invalidities.transaction_not_found {
                     let minimum_transaction_id = observations.transaction_recorded_events;
                     minimum_transaction_id..u64::MAX
                 } else {
                     let maximum_transaction_id = observations.transaction_recorded_events;
                     0..maximum_transaction_id
                 }.prop_map(transaction::Id);
+
+                let debit_account_strategy = if invalidities.debit_account_not_found {
+                    any::<account::Name>().prop_filter("existing name", |name| !observations.account_names.contains(name))
+                } else {
+
+                };
 
                 let move_added = MoveAdded {
                     transaction,
