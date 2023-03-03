@@ -977,6 +977,7 @@ mod test {
         let event_strategy =
             (invalidities_strategy, events_strategy).prop_flat_map(|(invalidities, events)| {
                 let observations: Observations = events.iter().collect();
+                let account_names: Vec<_> = observations.account_names.into_iter().collect();
 
                 let transaction_strategy = if invalidities.transaction_not_found {
                     let minimum_transaction_id = observations.transaction_recorded_events;
@@ -987,10 +988,16 @@ mod test {
                 }.prop_map(transaction::Id);
 
                 let debit_account_strategy = if invalidities.debit_account_not_found {
-                    any::<account::Name>().prop_filter("existing name", |name| !observations.account_names.contains(name))
+                    any::<account::Name>().prop_filter("existing name", |name| !observations.account_names.contains(name)).boxed()
                 } else {
-
+                    select(&account_names).boxed()
                 };
+
+                let credit_account_strategy = debit_account_strategy.clone().prop_flat_map(|debit_account| if invalidities.debit_account_not_found {
+                    any::<account::Name>().prop_filter("existing name", |name| !observations.account_names.contains(name)).boxed()
+                } else {
+                    select(&account_names).boxed()
+                }.prop_filter("same account names", |credit_account| &debit_account != credit_account));
 
                 let move_added = MoveAdded {
                     transaction,
