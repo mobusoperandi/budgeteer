@@ -172,7 +172,7 @@ mod test {
     use std::{collections::BTreeSet, io};
 
     use crate::{
-        entities::{account, transaction, unit::Unit},
+        entities::{account, transaction, unit::Unit, amount::{self, Amount}},
         error::Error,
         events::AccountCreated,
     };
@@ -1016,16 +1016,23 @@ mod test {
                             })
                         });
 
-                let unit_strategy = match invalidities.unit_related {
+                let unit_created_strategy = match invalidities.unit_related {
                     Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch) | None => {
-                        select(&account_names).boxed()
+                        select(&observations.unit_created_events).boxed()
                     }
-                    Some(UnitRelatedInvalidMoveAddedReason::UnitNotFound) => any::<unit::Unit>()
-                        .prop_filter("existing unit name", |name| {
-                            !observations.unit_names().contains(name)
+                    Some(UnitRelatedInvalidMoveAddedReason::UnitNotFound) => any::<UnitCreated>()
+                        .prop_filter("existing unit name", |unit_created| {
+                            !observations.unit_names().contains(&unit_created.name)
                         })
                         .boxed(),
                 };
+
+                let amount_strategy = unit_created_strategy.clone().prop_flat_map(|unit_created|{ if matches!(invalidities.unit_related, Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch)) {
+                    NonNegativeAmount::arbitrary_with()
+                } else {
+
+                }
+                }
 
                 // let move_added = MoveAdded {
                 //     transaction,
