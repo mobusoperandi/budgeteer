@@ -980,10 +980,11 @@ mod test {
 
                 let transaction = if invalidities.transaction_not_found {
                     let minimum_transaction_id = observations.transaction_recorded_events;
-                    (minimum_transaction_id..).prop_map(transaction::Id)
+                    minimum_transaction_id..u64::MAX
                 } else {
-                    let maximum_transaction_id = observations.transaction_recorded_events
-                };
+                    let maximum_transaction_id = observations.transaction_recorded_events;
+                    0..maximum_transaction_id
+                }.prop_map(transaction::Id);
 
                 let move_added = MoveAdded {
                     transaction,
