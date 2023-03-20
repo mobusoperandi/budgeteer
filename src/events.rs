@@ -1037,9 +1037,17 @@ mod test {
                         invalidities.unit_related,
                         Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch)
                     ) {
-                        let decimal_places_strategy = any
-                        NonNegativeAmount::arbitrary_with()
+                        let decimal_places_strategy = any::<u8>()
+                            .prop_filter("same as unit_created decimal_places", |&scale| {
+                                scale != unit_created.decimal_places
+                            });
+                        decimal_places_strategy
+                            .prop_flat_map(|decimal_places| {
+                                NonNegativeAmount::arbitrary_with(Some(decimal_places))
+                            })
+                            .boxed()
                     } else {
+                        NonNegativeAmount::arbitrary_with(Some(unit_created.decimal_places)).boxed()
                     }
                 });
 
