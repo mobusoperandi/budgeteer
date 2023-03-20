@@ -978,11 +978,12 @@ mod test {
         let mut runner = TestRunner::default();
         let invalidities_strategy = any::<MoveAddedInvalidities>();
         let events_strategy = invalidities_strategy
+            .clone()
             .prop_flat_map(|invalidities| Events::arbitrary_with(invalidities.into()));
         let event_strategy =
             (invalidities_strategy, events_strategy).prop_flat_map(|(invalidities, events)| {
                 let observations: Observations = events.iter().collect();
-                let account_names: Vec<_> = observations.account_names.into_iter().collect();
+                let account_names: Vec<_> = observations.account_names.iter().cloned().collect();
 
                 let transaction_strategy = if invalidities.transaction_not_found {
                     let minimum_transaction_id = observations.transaction_recorded_events;
@@ -993,20 +994,21 @@ mod test {
                 }
                 .prop_map(transaction::Id);
 
+                let account_names = observations.account_names.clone();
                 let debit_account_strategy = if invalidities.debit_account_not_found {
                     any::<account::Name>()
-                        .prop_filter("existing name", |name| {
-                            !observations.account_names.contains(name)
+                        .prop_filter("existing name", move |name| {
+                            !account_names.contains(name)
                         })
                         .boxed()
                 } else {
-                    select(&account_names).boxed()
+                    select(account_names.clone()).boxed()
                 };
 
                 let credit_account_strategy =
                     debit_account_strategy
                         .clone()
-                        .prop_flat_map(|debit_account| {
+                        .prop_flat_map(move |debit_account| {
                             if invalidities.debit_account_not_found {
                                 any::<account::Name>()
                                     .prop_filter("existing account name", |name| {
@@ -1051,13 +1053,24 @@ mod test {
                     }
                 });
 
-                // let move_added = MoveAdded {
-                //     transaction,
-                //     debit_account: todo!(),
-                //     credit_account: todo!(),
-                //     amount: todo!(),
-                //     unit: todo!(),
-                // };
+                (
+                    transaction_strategy,
+                    debit_account_strategy,
+                    credit_account_strategy,
+                    amount_strategy,
+                    unit_created_strategy,
+                )
+                    .prop_map(
+                        |(transaction, debit_account, credit_account, amount, unit_created)| {
+                            MoveAdded {
+                                transaction,
+                                debit_account,
+                                credit_account,
+                                amount,
+                                unit: unit_created.name,
+                            }
+                        },
+                    )
             });
     }
 
