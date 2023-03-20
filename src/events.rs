@@ -572,7 +572,7 @@ mod test {
         }
     }
 
-    #[derive(Debug, Clone, Default)]
+    #[derive(Debug, Clone, Default, PartialEq, Eq)]
     pub(crate) struct MoveAddedInvalidities {
         transaction_not_found: bool,
         debit_account_not_found: bool,
@@ -580,7 +580,7 @@ mod test {
         unit_related: Option<UnitRelatedInvalidMoveAddedReason>,
     }
 
-    #[derive(Debug, Clone, Arbitrary)]
+    #[derive(Debug, Clone, Arbitrary, PartialEq, Eq)]
     pub(crate) enum UnitRelatedInvalidMoveAddedReason {
         UnitNotFound,
         DecimalPlacesMismatch,
@@ -1086,8 +1086,15 @@ mod test {
                     let event = Event::MoveAdded(move_added);
                     let result = event.validate_for_appending_to(&events);
 
-                    match invalidities {};
+                    if invalidities == MoveAddedInvalidities::default() {
+                        assert!(result.is_ok());
+                    } else {
+                        let error = result.unwrap_err();
+                        let EventValidateForAppendingToError::MoveAdded(move_added_error) = error else {
 
+                        };
+                        let MoveAddedInvalidities { transaction_not_found, debit_account_not_found, credit_account_not_found, unit_related } = invalidities;
+                    }
 
 
                     Ok(())
