@@ -172,7 +172,12 @@ mod test {
     use std::{collections::BTreeSet, io};
 
     use crate::{
-        entities::{account, transaction, unit::Unit, amount::{self, Amount}},
+        entities::{
+            account,
+            amount::{self, Amount},
+            transaction,
+            unit::Unit,
+        },
         error::Error,
         events::AccountCreated,
     };
@@ -1027,12 +1032,16 @@ mod test {
                         .boxed(),
                 };
 
-                let amount_strategy = unit_created_strategy.clone().prop_flat_map(|unit_created|{ if matches!(invalidities.unit_related, Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch)) {
-                    NonNegativeAmount::arbitrary_with()
-                } else {
-
-                }
-                }
+                let amount_strategy = unit_created_strategy.clone().prop_flat_map(|unit_created| {
+                    if matches!(
+                        invalidities.unit_related,
+                        Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch)
+                    ) {
+                        let decimal_places_strategy = any
+                        NonNegativeAmount::arbitrary_with()
+                    } else {
+                    }
+                });
 
                 // let move_added = MoveAdded {
                 //     transaction,
