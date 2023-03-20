@@ -977,9 +977,11 @@ mod test {
     fn event_validate_for_appending_to_move_added() {
         let mut runner = TestRunner::default();
         let invalidities_strategy = any::<MoveAddedInvalidities>();
+
         let events_strategy = invalidities_strategy
             .clone()
             .prop_flat_map(|invalidities| Events::arbitrary_with(invalidities.into()));
+
         let move_added_strategy =
             (invalidities_strategy, events_strategy).prop_flat_map(|(invalidities, events)| {
                 let observations: Observations = events.iter().collect();
@@ -1076,7 +1078,22 @@ mod test {
                         },
                     )
             });
-        runner.run(strategy, test)
+
+        runner
+            .run(
+                &(invalidities_strategy, move_added_strategy, events_strategy),
+                |(invalidities, move_added, events)| {
+                    let event = Event::MoveAdded(move_added);
+                    let result = event.validate_for_appending_to(&events);
+
+                    match invalidities {};
+
+
+
+                    Ok(())
+                },
+            )
+            .unwrap()
     }
 
     // TODO instead of the following test or two, use the power of property based testing
