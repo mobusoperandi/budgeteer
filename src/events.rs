@@ -1083,17 +1083,38 @@ mod test {
             .run(
                 &(invalidities_strategy, move_added_strategy, events_strategy),
                 |(invalidities, move_added, events)| {
-                    let event = Event::MoveAdded(move_added);
+                    let event = Event::MoveAdded(move_added.clone());
                     let result = event.validate_for_appending_to(&events);
 
                     if invalidities == MoveAddedInvalidities::default() {
                         assert!(result.is_ok());
                     } else {
                         let error = result.unwrap_err();
-                        let EventValidateForAppendingToError::MoveAdded(move_added_error) = error else {
 
+                        let EventValidateForAppendingToError::MoveAdded(move_added_error) = error else {
+                            panic!("expected this variant");
                         };
-                        let MoveAddedInvalidities { transaction_not_found, debit_account_not_found, credit_account_not_found, unit_related } = invalidities;
+
+                        if invalidities.transaction_not_found {
+                            assert_eq!(move_added_error.transaction_not_found, Some(move_added.transaction));
+                        }
+
+                        if invalidities.debit_account_not_found {
+                            assert_eq!(move_added_error.debit_account_not_found, Some(move_added.debit_account));
+                        }
+
+                        if invalidities.credit_account_not_found {
+                            assert_eq!(move_added_error.credit_account_not_found, Some(move_added.credit_account));
+                        }
+
+                        if let Some(unit_related_invalidity) = invalidities.unit_related {
+                            match unit_related_invalidity {
+                                UnitRelatedInvalidMoveAddedReason::UnitNotFound => {
+                                    assert_eq!(move_added_error.unit, Some(EventValidateForAppendingToErrorMoveAddedUnit::UnitNotFound()))
+                                },
+                                UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch => todo!(),
+                            }
+                        }
                     }
 
 
