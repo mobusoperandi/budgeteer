@@ -1130,12 +1130,25 @@ mod test {
                                 )
                             }
                             UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch => {
-                                let unit_scale = events.0.iter().find_map(|event| match event {
-                                    Event::UnitCreated(unit_created) => Some(unit_created.decimal_places),
-                                    _ => None
-                                }).expect("unit exists");
-                                assert_eq!(move_added_error.unit, Some(EventValidateForAppendingToErrorMoveAddedUnit::DecimalPlacesMismatch { unit_scale, amount_scale: move_added.amount.scale() }))
-                            },
+                                let unit_scale = events
+                                    .0
+                                    .iter()
+                                    .find_map(|event| match event {
+                                        Event::UnitCreated(unit_created) => {
+                                            Some(unit_created.decimal_places)
+                                        }
+                                        _ => None,
+                                    })
+                                    .expect("unit exists");
+
+                                assert_eq!(
+                                    move_added_error.unit,
+                                    Some(EventValidateForAppendingToErrorMoveAddedUnit::DecimalPlacesMismatch {
+                                        unit_scale,
+                                        amount_scale: move_added.amount.scale()
+                                    })
+                                )
+                            }
                         }
                     }
 
