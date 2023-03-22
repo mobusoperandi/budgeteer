@@ -971,89 +971,95 @@ mod test {
     #[test]
     fn event_validate_for_appending_to_move_added() {
         let mut runner = TestRunner::default();
-        let invalidities_strategy = any::<MoveAddedInvalidities>();
 
-        let events_strategy = invalidities_strategy
-            .clone()
-            .prop_flat_map(|invalidities| Events::arbitrary_with(invalidities.into()));
+        let strategy = any::<
+            MoveAddedInvalidities,
+        >()
+        .prop_flat_map(|invalidities| {
+            (
+                Just(invalidities.clone()),
+                Events::arbitrary_with(invalidities.into()),
+            )
+        })
+        .prop_flat_map(|(invalidities, events)| {
+            let observations: Observations = events.iter().collect();
+            let account_names: Vec<_> = observations.account_names.iter().cloned().collect();
 
-        let move_added_strategy =
-            (&invalidities_strategy, &events_strategy).prop_flat_map(|(invalidities, events)| {
-                let observations: Observations = events.iter().collect();
-                let account_names: Vec<_> = observations.account_names.iter().cloned().collect();
+            let transaction_strategy = if invalidities.transaction_not_found {
+                let minimum_transaction_id = observations.transaction_recorded_events;
+                minimum_transaction_id..u64::MAX
+            } else {
+                let maximum_transaction_id = observations.transaction_recorded_events;
+                0..maximum_transaction_id
+            }
+            .prop_map(transaction::Id);
 
-                let transaction_strategy = if invalidities.transaction_not_found {
-                    let minimum_transaction_id = observations.transaction_recorded_events;
-                    minimum_transaction_id..u64::MAX
-                } else {
-                    let maximum_transaction_id = observations.transaction_recorded_events;
-                    0..maximum_transaction_id
-                }
-                .prop_map(transaction::Id);
+            let debit_account_strategy = if invalidities.debit_account_not_found {
+                let account_names = account_names.clone();
+                any::<account::Name>()
+                    .prop_filter("existing name", move |name| !account_names.contains(name))
+                    .boxed()
+            } else {
+                select(account_names.clone()).boxed()
+            };
 
-                let debit_account_strategy = if invalidities.debit_account_not_found {
-                    let account_names = account_names.clone();
-                    any::<account::Name>()
-                        .prop_filter("existing name", move |name| !account_names.contains(name))
-                        .boxed()
-                } else {
-                    select(account_names.clone()).boxed()
-                };
-
-                let credit_account_strategy =
-                    debit_account_strategy
-                        .clone()
-                        .prop_flat_map(move |debit_account| {
-                            let account_names = account_names.clone();
-                            if invalidities.debit_account_not_found {
-                                any::<account::Name>()
-                                    .prop_filter("existing account name", move |name| {
-                                        !account_names.contains(name)
-                                    })
-                                    .boxed()
-                            } else {
-                                select(account_names).boxed()
-                            }
-                            .prop_filter("same account names", move |credit_account| {
-                                &debit_account != credit_account
-                            })
-                        });
-
-                let unit_names = observations.unit_names();
-                let unit_created_strategy = match invalidities.unit_related {
-                    Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch) | None => {
-                        select(observations.unit_created_events).boxed()
-                    }
-                    Some(UnitRelatedInvalidMoveAddedReason::UnitNotFound) => any::<UnitCreated>()
-                        .prop_filter("existing unit name", move |unit_created| {
-                            !unit_names.contains(&unit_created.name)
+            let credit_account_strategy =
+                debit_account_strategy
+                    .clone()
+                    .prop_flat_map(move |debit_account| {
+                        let account_names = account_names.clone();
+                        if invalidities.debit_account_not_found {
+                            any::<account::Name>()
+                                .prop_filter("existing account name", move |name| {
+                                    !account_names.contains(name)
+                                })
+                                .boxed()
+                        } else {
+                            select(account_names).boxed()
+                        }
+                        .prop_filter("same account names", move |credit_account| {
+                            &debit_account != credit_account
                         })
-                        .boxed(),
-                };
+                    });
 
-                let amount_strategy =
-                    unit_created_strategy
-                        .clone()
-                        .prop_flat_map(move |unit_created| {
-                            if matches!(
-                                invalidities.unit_related,
-                                Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch)
-                            ) {
-                                let decimal_places_strategy = any::<u8>().prop_filter(
-                                    "same as unit_created decimal_places",
-                                    move |&scale| scale != unit_created.decimal_places,
-                                );
-                                decimal_places_strategy
-                                    .prop_flat_map(|decimal_places| {
-                                        NonNegativeAmount::arbitrary_with(Some(decimal_places))
-                                    })
-                                    .boxed()
-                            } else {
-                                NonNegativeAmount::arbitrary_with(Some(unit_created.decimal_places))
-                                    .boxed()
-                            }
-                        });
+            let unit_names = observations.unit_names();
+            let unit_created_strategy = match invalidities.unit_related {
+                Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch) | None => {
+                    select(observations.unit_created_events).boxed()
+                }
+                Some(UnitRelatedInvalidMoveAddedReason::UnitNotFound) => any::<UnitCreated>()
+                    .prop_filter("existing unit name", move |unit_created| {
+                        !unit_names.contains(&unit_created.name)
+                    })
+                    .boxed(),
+            };
 
+            let amount_strategy =
+                unit_created_strategy
+                    .clone()
+                    .prop_flat_map(move |unit_created| {
+                        if matches!(
+                            invalidities.unit_related,
+                            Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch)
+                        ) {
+                            let decimal_places_strategy = any::<u8>().prop_filter(
+                                "same as unit_created decimal_places",
+                                move |&scale| scale != unit_created.decimal_places,
+                            );
+                            decimal_places_strategy
+                                .prop_flat_map(|decimal_places| {
+                                    NonNegativeAmount::arbitrary_with(Some(decimal_places))
+                                })
+                                .boxed()
+                        } else {
+                            NonNegativeAmount::arbitrary_with(Some(unit_created.decimal_places))
+                                .boxed()
+                        }
+                    });
+
+            (
+                Just(invalidities),
+                Just(events),
                 (
                     transaction_strategy,
                     debit_account_strategy,
@@ -1071,22 +1077,19 @@ mod test {
                                 unit: unit_created.name,
                             }
                         },
-                    )
-            });
+                    ),
+            )
+        });
 
         runner
             .run(
-                &(
-                    &invalidities_strategy,
-                    move_added_strategy,
-                    &events_strategy,
-                ),
-                |(invalidities, move_added, events)| {
+                &strategy,
+                |(invalidities, events, move_added)| {
                     let event = Event::MoveAdded(move_added.clone());
                     let result = event.validate_for_appending_to(&events);
 
                     if invalidities == MoveAddedInvalidities::default() {
-                        assert!(dbg!(result).is_ok());
+                        assert!(result.is_ok());
                         return Ok(());
                     }
 
