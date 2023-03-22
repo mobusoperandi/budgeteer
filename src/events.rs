@@ -172,12 +172,7 @@ mod test {
     use std::{collections::BTreeSet, io};
 
     use crate::{
-        entities::{
-            account,
-            amount::{self, Amount},
-            transaction,
-            unit::Unit,
-        },
+        entities::{account, transaction, unit::Unit},
         error::Error,
         events::AccountCreated,
     };
@@ -983,7 +978,7 @@ mod test {
             .prop_flat_map(|invalidities| Events::arbitrary_with(invalidities.into()));
 
         let move_added_strategy =
-            (invalidities_strategy, events_strategy).prop_flat_map(|(invalidities, events)| {
+            (&invalidities_strategy, &events_strategy).prop_flat_map(|(invalidities, events)| {
                 let observations: Observations = events.iter().collect();
                 let account_names: Vec<_> = observations.account_names.iter().cloned().collect();
 
@@ -1017,7 +1012,7 @@ mod test {
                                     })
                                     .boxed()
                             } else {
-                                select(account_names.clone()).boxed()
+                                select(account_names).boxed()
                             }
                             .prop_filter("same account names", move |credit_account| {
                                 &debit_account != credit_account
@@ -1081,42 +1076,62 @@ mod test {
 
         runner
             .run(
-                &(invalidities_strategy, move_added_strategy, events_strategy),
+                &(
+                    &invalidities_strategy,
+                    move_added_strategy,
+                    &events_strategy,
+                ),
                 |(invalidities, move_added, events)| {
                     let event = Event::MoveAdded(move_added.clone());
                     let result = event.validate_for_appending_to(&events);
 
                     if invalidities == MoveAddedInvalidities::default() {
                         assert!(result.is_ok());
-                    } else {
-                        let error = result.unwrap_err();
+                        return Ok(());
+                    }
 
-                        let EventValidateForAppendingToError::MoveAdded(move_added_error) = error else {
+                    let error = result.unwrap_err();
+
+                    let EventValidateForAppendingToError::MoveAdded(move_added_error) = error else {
                             panic!("expected this variant");
                         };
 
-                        if invalidities.transaction_not_found {
-                            assert_eq!(move_added_error.transaction_not_found, Some(move_added.transaction));
-                        }
-
-                        if invalidities.debit_account_not_found {
-                            assert_eq!(move_added_error.debit_account_not_found, Some(move_added.debit_account));
-                        }
-
-                        if invalidities.credit_account_not_found {
-                            assert_eq!(move_added_error.credit_account_not_found, Some(move_added.credit_account));
-                        }
-
-                        if let Some(unit_related_invalidity) = invalidities.unit_related {
-                            match unit_related_invalidity {
-                                UnitRelatedInvalidMoveAddedReason::UnitNotFound => {
-                                    assert_eq!(move_added_error.unit, Some(EventValidateForAppendingToErrorMoveAddedUnit::UnitNotFound()))
-                                },
-                                UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch => todo!(),
-                            }
-                        }
+                    if invalidities.transaction_not_found {
+                        assert_eq!(
+                            move_added_error.transaction_not_found,
+                            Some(move_added.transaction)
+                        );
                     }
 
+                    if invalidities.debit_account_not_found {
+                        assert_eq!(
+                            move_added_error.debit_account_not_found,
+                            Some(move_added.debit_account)
+                        );
+                    }
+
+                    if invalidities.credit_account_not_found {
+                        assert_eq!(
+                            move_added_error.credit_account_not_found,
+                            Some(move_added.credit_account)
+                        );
+                    }
+
+                    if let Some(unit_related_invalidity) = invalidities.unit_related {
+                        match unit_related_invalidity {
+                            UnitRelatedInvalidMoveAddedReason::UnitNotFound => {
+                                assert_eq!(
+                                    move_added_error.unit,
+                                    Some(
+                                        EventValidateForAppendingToErrorMoveAddedUnit::UnitNotFound(
+                                            move_added.unit
+                                        )
+                                    )
+                                )
+                            }
+                            UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch => todo!(),
+                        }
+                    }
 
                     Ok(())
                 },
