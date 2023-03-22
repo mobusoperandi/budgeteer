@@ -70,7 +70,6 @@ impl Events {
             .filter(|event| matches!(event, Event::TransactionRecorded(_)))
             .count();
         (1..=transaction_recorded_count)
-            .into_iter()
             .map(|id| transaction::Id(id as u64))
             .collect()
     }

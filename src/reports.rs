@@ -117,7 +117,6 @@ impl Report {
         };
         // TODO perhaps if we use the table crate to print, it would detect TTY
         Ok(ansitok::parse_ansi(&output)
-            .into_iter()
             .filter_map(|text_or_code| match text_or_code {
                 ansitok::Output::Text(text) => Some(String::from(text)),
                 ansitok::Output::Escape(_) => None,
