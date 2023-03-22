@@ -1086,7 +1086,7 @@ mod test {
                     let result = event.validate_for_appending_to(&events);
 
                     if invalidities == MoveAddedInvalidities::default() {
-                        assert!(result.is_ok());
+                        assert!(dbg!(result).is_ok());
                         return Ok(());
                     }
 
@@ -1159,55 +1159,55 @@ mod test {
     }
 
     // TODO instead of the following test or two, use the power of property based testing
-    #[test]
-    fn event_validate_for_appending_to_move_added_transaction_not_found() {
-        let mut runner = TestRunner::default();
-        let strategy = any::<Events>().prop_flat_map(|events| {
-            let observations: Observations = events.iter().collect();
-            let move_added = MoveAdded::arbitrary_with(ArbitraryMoveAddedParam::With(
-                observations,
-                MoveAddedInvalidities {
-                    transaction_not_found: true,
-                    ..Default::default()
-                },
-            ));
-            (Just(events), move_added)
-        });
-        runner
-            .run(&strategy, |(events, move_added)| {
-                let error = Event::MoveAdded(move_added.clone())
-                    .validate_for_appending_to(&events)
-                    .unwrap_err();
-
-                assert_eq!(
-                    error,
-                    EventValidateForAppendingToError::MoveAdded(
-                        EventValidateForAppendingToErrorMoveAdded {
-                            transaction_not_found: Some(move_added.transaction),
-                            debit_account_not_found: None,
-                            credit_account_not_found: None,
-                            unit: None
-                        }
-                    )
-                );
-
-                Ok(())
-            })
-            .unwrap();
-    }
-
-    #[test]
-    fn event_validate_for_appending_to_success() {
-        let mut runner = TestRunner::default();
-        let strategy = any::<Events>().prop_flat_map(|events| {
-            let event = Event::arbitrary_with(ArbitraryEventParam::ValidAfter(events.clone()));
-            (Just(events), event)
-        });
-        runner
-            .run(&strategy, |(events, event)| {
-                event.validate_for_appending_to(&events).unwrap();
-                Ok(())
-            })
-            .unwrap();
-    }
+    // #[test]
+    // fn event_validate_for_appending_to_move_added_transaction_not_found() {
+    //     let mut runner = TestRunner::default();
+    //     let strategy = any::<Events>().prop_flat_map(|events| {
+    //         let observations: Observations = events.iter().collect();
+    //         let move_added = MoveAdded::arbitrary_with(ArbitraryMoveAddedParam::With(
+    //             observations,
+    //             MoveAddedInvalidities {
+    //                 transaction_not_found: true,
+    //                 ..Default::default()
+    //             },
+    //         ));
+    //         (Just(events), move_added)
+    //     });
+    //     runner
+    //         .run(&strategy, |(events, move_added)| {
+    //             let error = Event::MoveAdded(move_added.clone())
+    //                 .validate_for_appending_to(&events)
+    //                 .unwrap_err();
+    //
+    //             assert_eq!(
+    //                 error,
+    //                 EventValidateForAppendingToError::MoveAdded(
+    //                     EventValidateForAppendingToErrorMoveAdded {
+    //                         transaction_not_found: Some(move_added.transaction),
+    //                         debit_account_not_found: None,
+    //                         credit_account_not_found: None,
+    //                         unit: None
+    //                     }
+    //                 )
+    //             );
+    //
+    //             Ok(())
+    //         })
+    //         .unwrap();
+    // }
+    //
+    // #[test]
+    // fn event_validate_for_appending_to_success() {
+    //     let mut runner = TestRunner::default();
+    //     let strategy = any::<Events>().prop_flat_map(|events| {
+    //         let event = Event::arbitrary_with(ArbitraryEventParam::ValidAfter(events.clone()));
+    //         (Just(events), event)
+    //     });
+    //     runner
+    //         .run(&strategy, |(events, event)| {
+    //             event.validate_for_appending_to(&events).unwrap();
+    //             Ok(())
+    //         })
+    //         .unwrap();
+    // }
 }
