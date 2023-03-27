@@ -979,7 +979,7 @@ mod test {
             )
         });
 
-        let strategy = strategy.prop_flat_map(|(invalidities, events)| {
+        let strategy = strategy.prop_flat_map(|values @ (invalidities, events)| {
             let observations: Observations = events.iter().collect();
 
             let transaction_strategy = if invalidities.transaction_not_found {
@@ -991,10 +991,10 @@ mod test {
             }
             .prop_map(transaction::Id);
 
-            (Just(invalidities), Just(events), transaction_strategy)
+            (Just(values), transaction_strategy)
         });
 
-        let strategy = strategy.prop_flat_map(|(invalidities, events, transaction)| {
+        let strategy = strategy.prop_flat_map(|((invalidities, events), transaction)| {
             let observations: Observations = events.iter().collect();
             let account_names: Vec<_> = observations.account_names.iter().cloned().collect();
 
@@ -1007,48 +1007,63 @@ mod test {
                 select(account_names.clone()).boxed()
             };
 
-            (
-                Just(invalidities),
-                Just(events),
-                Just(transaction),
-                debit_account_strategy,
-            )
+            (Just((invalidities, events, transaction)), debit_account_strategy)
         });
+
+        let strategy =
+            strategy.prop_flat_map(|(invalidities, events, transaction, debit_account)| {
+                let observations: Observations = events.iter().collect();
+                let account_names: Vec<_> = observations.account_names.iter().cloned().collect();
+
+                let credit_account_strategy = if invalidities.debit_account_not_found {
+                    any::<account::Name>()
+                        .prop_filter("existing account name", move |name| {
+                            !account_names.contains(name)
+                        })
+                        .boxed()
+                } else {
+                    select(account_names).boxed()
+                }
+                .prop_filter("same account names", move |credit_account| {
+                    &debit_account != credit_account
+                });
+
+                (
+                    Just(invalidities),
+                    Just(events),
+                    Just(transaction),
+                    Just(debit_account),
+                    credit_account_strategy,
+                )
+            });
+
+        let strategy = strategy.prop_flat_map(
+            |(invalidities, events, transaction, debit_account, credit_account)| {
+                let observations: Observations = events.iter().collect();
+
+                let unit_names = observations.unit_names();
+                let unit_created_strategy = match invalidities.unit_related {
+                    Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch) | None => {
+                        select(observations.unit_created_events).boxed()
+                    }
+                    Some(UnitRelatedInvalidMoveAddedReason::UnitNotFound) => any::<UnitCreated>()
+                        .prop_filter("existing unit name", move |unit_created| {
+                            !unit_names.contains(&unit_created.name)
+                        })
+                        .boxed(),
+                };
+                (
+                    Just(invalidities),
+                    Just(events),
+                    Just(transaction),
+                    Just(debit_account),
+                    credit_account_strategy,
+                )
+            },
+        );
 
         let strategy = strategy.prop_flat_map(|(invalidities, events, transaction)| {
             let observations: Observations = events.iter().collect();
-            let account_names: Vec<_> = observations.account_names.iter().cloned().collect();
-
-            let credit_account_strategy =
-                debit_account_strategy
-                    .clone()
-                    .prop_flat_map(move |debit_account| {
-                        let account_names = account_names.clone();
-                        if invalidities.debit_account_not_found {
-                            any::<account::Name>()
-                                .prop_filter("existing account name", move |name| {
-                                    !account_names.contains(name)
-                                })
-                                .boxed()
-                        } else {
-                            select(account_names).boxed()
-                        }
-                        .prop_filter("same account names", move |credit_account| {
-                            &debit_account != credit_account
-                        })
-                    });
-
-            let unit_names = observations.unit_names();
-            let unit_created_strategy = match invalidities.unit_related {
-                Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch) | None => {
-                    select(observations.unit_created_events).boxed()
-                }
-                Some(UnitRelatedInvalidMoveAddedReason::UnitNotFound) => any::<UnitCreated>()
-                    .prop_filter("existing unit name", move |unit_created| {
-                        !unit_names.contains(&unit_created.name)
-                    })
-                    .boxed(),
-            };
 
             let invalidities_clone = invalidities.clone();
             let amount_strategy =
