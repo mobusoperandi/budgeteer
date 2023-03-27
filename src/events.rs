@@ -1021,7 +1021,7 @@ mod test {
                         });
 
                 let unit_names = observations.unit_names();
-                let = match invalidities.unit_related {
+                let unit_created_strategy = match invalidities.unit_related {
                     Some(UnitRelatedInvalidMoveAddedReason::DecimalPlacesMismatch) | None => {
                         select(observations.unit_created_events).boxed()
                     }
